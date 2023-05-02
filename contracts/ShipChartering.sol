@@ -18,7 +18,7 @@ contract ShipTimeCharteringGeneric is Initializable {
 
     // //ShipOwnerReport
     mapping(uint256 day => uint16 oilTonsQuantity) public oilSupply;
-    mapping(uint256 day => VesselReport vesselReport) public vesselDailyReport;
+    mapping(uint256 day => VesselReport vesselReport) public vesselOpsReport;
     
     //contract types
     struct ContractValues {
@@ -29,7 +29,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     struct VesselData {
         uint32 vesselIMOnumber; 
         uint8 averageCruisingSpeed;
-        uint8 averageOilConsumptionTonsPerHour;
+        mapping(OperationStatus => uint8) oilConsumptionTonsHour;
     }
     struct Dispute {
         uint256 startTime;
@@ -39,21 +39,22 @@ contract ShipTimeCharteringGeneric is Initializable {
         mapping(address => bool) votes;
         bool isClose;
         uint32 value;
-        Party partyOpenDispute;
+        DiputeParty partyOpenDispute;
     }
     struct Location {
         int32 latitude; // degrees * 10^7
         int32 longitude; // degrees * 10^7
     }
     enum OperationStatus {
-        StandBy,
+        standBy,
         atOperation,
         underWay,
         waintingOrders,
         offHire,
+        atAnchor,
         suppling    
     }
-    enum Party {
+    enum DiputeParty {
         ShipOwner,
         Charterer
     }
@@ -72,8 +73,9 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
     struct VesselReport {
         OperationStatus operationStatus;
-        Location veeselPosition;
-        uint16 dailyOilConsuption;
+        Location startPosition;
+        Location endPosition;
+        uint16 opsOilConsuption;
     }
 
     
@@ -102,8 +104,10 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint8 _chainteringServicePayPerHour,
         uint8 _averageCruisingSpeed,
         uint32 _vesselIMOnumber,
-        uint8 _averageOilConsumptionTonsPerHour, 
-        uint256 _earlyCancellationPenaltyPerHour
+        uint256 _earlyCancellationPenaltyPerHour,
+        uint8 _consuptionstandBy,
+        uint8 _consuptionAtOperation,
+        uint8 _consuptionUnderWay
     ) external {
         contractTimes.monthlyPayday = _monthlyPayday;
         contractValues.charterPerHour = _charterPerHour;
@@ -111,7 +115,13 @@ contract ShipTimeCharteringGeneric is Initializable {
         contractValues.earlyCancellationPenaltyPerHour = _earlyCancellationPenaltyPerHour;    
         vesselData.averageCruisingSpeed = _averageCruisingSpeed;
         vesselData.vesselIMOnumber = _vesselIMOnumber;
-        vesselData.averageOilConsumptionTonsPerHour = _averageOilConsumptionTonsPerHour;
+        vesselData.oilConsumptionTonsHour[OperationStatus.standBy] = _consuptionstandBy;
+        vesselData.oilConsumptionTonsHour[OperationStatus.atOperation] = _consuptionAtOperation;
+        vesselData.oilConsumptionTonsHour[OperationStatus.underWay] = _consuptionUnderWay;
+        vesselData.oilConsumptionTonsHour[OperationStatus.atAnchor] = _consuptionstandBy;
+        vesselData.oilConsumptionTonsHour[OperationStatus.offHire] = 0;
+        vesselData.oilConsumptionTonsHour[OperationStatus.suppling] = _consuptionstandBy;
+        vesselData.oilConsumptionTonsHour[OperationStatus.waintingOrders] = _consuptionstandBy;
     }
     
     function startCharter(uint8 chartersTimeMonths) public payable {
@@ -119,18 +129,28 @@ contract ShipTimeCharteringGeneric is Initializable {
         contractTimes.startDateTime = block.timestamp;
         contractTimes.endDateTime = block.timestamp.add(chartersTimeMonths * 30 days);
         
-        emit CharterStarted(parties.shipOwner, parties.charterer, contractValues.charterPerHour, contractTimes.startDateTime, contractTimes.endDateTime);
+        emit CharterStarted(
+            parties.shipOwner, 
+            parties.charterer, 
+            contractValues.charterPerHour, 
+            contractTimes.startDateTime, 
+            contractTimes.endDateTime);
     }
 
     function earlyCancellationPenalty() public view returns ( uint _amountDueShipOwner ){
         if (block.timestamp < contractTimes.endDateTime) {
             uint256 diferenceBetweenDatesInHours = (contractTimes.endDateTime - block.timestamp) / 3600;
-            uint256 amountDueShipOwner = contractValues.earlyCancellationPenaltyPerHour * diferenceBetweenDatesInHours;
+            uint256 amountDueShipOwner = 
+                contractValues.earlyCancellationPenaltyPerHour * diferenceBetweenDatesInHours;
 
             return amountDueShipOwner;
         } else {
             return 0;
         }
+    }
+
+    function contractConsuptionByOperation(OperationStatus status) view public returns (uint8 oilConsuption) {
+        return vesselData.oilConsumptionTonsHour[status];
     }
 
     function checkOpenDispute() public view returns (bool _isSomeOpenDispute){
@@ -149,7 +169,8 @@ contract ShipTimeCharteringGeneric is Initializable {
     
     function closeCharter() payable public {
         require(msg.sender == parties.charterer, "Only the charterer can close the charter");
-        require(contractTimes.startDateTime > 0 && contractTimes.startDateTime < block.timestamp, "Charter cannot be closed if it not started");
+        require(contractTimes.startDateTime > 0 && contractTimes.startDateTime < block.timestamp, 
+            "Charter cannot be closed if it not started");
 
         bool isSomeOpenDispute = checkOpenDispute();
         require(isSomeOpenDispute == false, "Charter cannot be closed if there's some dispute opened");

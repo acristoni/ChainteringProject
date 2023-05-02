@@ -31,8 +31,10 @@ describe("ShipTimeCharteringGeneric", () => {
       75, // chainteringServicePayPerHour
       12, // averageCruisingSpeed
       9751779, // vesselIMOnumber
-      10, // averageOilConsumptionTonsPerHour
       1, // earlyCancellationPenaltyPerHour
+      5, // consuptionstandBy
+      25, // consuptionAtOperation
+      20, // consuptionUnderWay
     );
 
     //Start 3 month contract
@@ -70,7 +72,6 @@ describe("ShipTimeCharteringGeneric", () => {
       const vesselData = await shipTimeChartering.vesselData();
       const vesselIMOnumber = vesselData[0];
       const averageCruisingSpeed = vesselData[1];
-      const averageOilConsumptionTonsPerHour = vesselData[2];
   
       expect(monthlyPayday).to.equal(5);
       expect(charterPerHour).to.equal(30000);
@@ -78,8 +79,25 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(earlyCancellationPenaltyPerHour).to.equal(1);
       expect(vesselIMOnumber).to.equal(9751779);
       expect(averageCruisingSpeed).to.equal(12);
-      expect(averageOilConsumptionTonsPerHour).to.equal(10);
     });
+
+    it("should oil consuption by ship operation set up", async () => {
+      const oilConsuptionStandBy = await shipTimeChartering.contractConsuptionByOperation(0);
+      const oilConsuptionAtOperation = await shipTimeChartering.contractConsuptionByOperation(1);
+      const oilConsuptionUnderWay = await shipTimeChartering.contractConsuptionByOperation(2);
+      const oilConsuptionWaitingOrders = await shipTimeChartering.contractConsuptionByOperation(3);
+      const oilConsuptionOffHire = await shipTimeChartering.contractConsuptionByOperation(4);
+      const oilConsuptionAtAnchor = await shipTimeChartering.contractConsuptionByOperation(5);
+      const oilConsuptionSuppling = await shipTimeChartering.contractConsuptionByOperation(6);
+      
+      expect(oilConsuptionStandBy).to.equal(5);
+      expect(oilConsuptionAtOperation).to.equal(25);
+      expect(oilConsuptionUnderWay).to.equal(20);
+      expect(oilConsuptionWaitingOrders).to.equal(5);
+      expect(oilConsuptionOffHire).to.equal(0);
+      expect(oilConsuptionAtAnchor).to.equal(5);
+      expect(oilConsuptionSuppling).to.equal(5);
+    })
   })
 
   describe("Start ship chartering", async() => {
