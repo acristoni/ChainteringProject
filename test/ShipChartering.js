@@ -148,11 +148,11 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(parseInt(returnCalculation)).to.equal(0);
     })
 
-    // it("should not allow to close if charterer not pay early cancellation penalty", async () => {
-    //   await expect(
-    //     shipTimeChartering.connect(charterer).closeCharter()
-    //   ).to.be.revertedWith("Deposit early cancellation penalty");
-    // });
+    it("should not allow to close if charterer not pay early cancellation penalty", async () => {
+      await expect(
+        shipTimeChartering.connect(charterer).closeCharter()
+      ).to.be.revertedWith("Deposit early cancellation penalty");
+    });
 
     it("should close if charterer pay early cancellation penalty", async () => {
       const returnCalculation = await shipTimeChartering.earlyCancellationPenalty();
@@ -169,14 +169,6 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events[0].args.shipOwner).to.equal(shipOwner.address);
       expect(events[0].args.charterer).to.equal(charterer.address);
     });
-
-    // it("should not allow to close if there is some problem during send amount to ship owner", async () => {
-    //   await expect(
-    //     shipTimeChartering
-    //           .connect(charterer)
-    //           .closeCharter({ value: bigValue })
-    //   ).to.be.revertedWith("Failed to send amount due ship owner");
-    // });
   
     it("should not allow to close the charter if it has not started yet", async function () {
       [shipOwner, charterer, arbiter_1, arbiter_2, arbiter_3, chainteringService] = await ethers.getSigners();

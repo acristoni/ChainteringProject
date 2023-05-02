@@ -156,9 +156,6 @@ contract ShipTimeCharteringGeneric is Initializable {
 
         uint256 amountDue = earlyCancellationPenalty();
         if (amountDue > 0) {
-            console.log('msg.value', msg.value);
-            console.log('amountDue', amountDue);
-
             require(msg.value >= amountDue, "Deposit early cancellation penalty");
             (bool sentShipOwner, ) = parties.shipOwner.call{value: msg.value}("");
             require(sentShipOwner, "Failed to send amount due ship owner");
