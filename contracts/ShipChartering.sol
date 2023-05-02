@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "hardhat/console.sol";
 
 contract ShipTimeCharteringGeneric is Initializable {
     using SafeMath for uint256;
@@ -148,15 +149,18 @@ contract ShipTimeCharteringGeneric is Initializable {
     
     function closeCharter() payable public {
         require(msg.sender == parties.charterer, "Only the charterer can close the charter");
-        require(contractTimes.startDateTime < block.timestamp, "Charter cannot be closed if it not started");
+        require(contractTimes.startDateTime > 0 && contractTimes.startDateTime < block.timestamp, "Charter cannot be closed if it not started");
 
         bool isSomeOpenDispute = checkOpenDispute();
         require(isSomeOpenDispute == false, "Charter cannot be closed if there's some dispute opened");
 
         uint256 amountDue = earlyCancellationPenalty();
         if (amountDue > 0) {
-            require(msg.value == amountDue, "Deposit early cancellation penalty");
-            (bool sentShipOwner, ) = parties.shipOwner.call{value: amountDue}("");
+            console.log('msg.value', msg.value);
+            console.log('amountDue', amountDue);
+
+            require(msg.value >= amountDue, "Deposit early cancellation penalty");
+            (bool sentShipOwner, ) = parties.shipOwner.call{value: msg.value}("");
             require(sentShipOwner, "Failed to send amount due ship owner");
         }
         
