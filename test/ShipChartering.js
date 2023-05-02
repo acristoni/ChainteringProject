@@ -42,7 +42,7 @@ describe("ShipTimeCharteringGeneric", () => {
   });
 
   describe("Deploy new Contract", async() => {
-    it("should deploy and set variables on constructor correctly", async () => {
+    it("Should deploy and set variables on constructor correctly", async () => {
       // Check that variables were set correctly during deployment
       const parties = await shipTimeChartering.parties();
       const shipOwnerFromGetter = parties[0];
@@ -60,7 +60,7 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(chainteringServiceFromGetter).to.equal(chainteringService.address);
     });
   
-    it("should set contract variables on setUp function correctly", async () => {
+    it("Should set contract variables on setUp function correctly", async () => {
       const contractTimes = await shipTimeChartering.contractTimes();
       const monthlyPayday = parseInt(contractTimes[2]);
   
@@ -81,7 +81,7 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(averageCruisingSpeed).to.equal(12);
     });
 
-    it("should oil consuption by ship operation set up", async () => {
+    it("Should oil consuption by ship operation set up", async () => {
       const oilConsuptionStandBy = await shipTimeChartering.contractConsuptionByOperation(0);
       const oilConsuptionAtOperation = await shipTimeChartering.contractConsuptionByOperation(1);
       const oilConsuptionUnderWay = await shipTimeChartering.contractConsuptionByOperation(2);
@@ -101,7 +101,7 @@ describe("ShipTimeCharteringGeneric", () => {
   })
 
   describe("Start ship chartering", async() => {
-    it("should start the charter ship", async () => {  
+    it("Should start the charter ship", async () => {  
       // Check the start date time and end date time
       const contractTimes = await shipTimeChartering.contractTimes();
       const startDateTime = parseInt(contractTimes[0]);
@@ -119,7 +119,7 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events[0].args.end).to.equal(endDateTime);
     });
 
-    it("shouldn't start if other than carterer party try to start contract", async() => {
+    it("Shouldn't start if other than carterer party try to start contract", async() => {
       await expect(
         shipTimeChartering.connect(shipOwner).startCharter(3)
       ).to.be.revertedWith("Only charterer can start the charter ship");
@@ -127,7 +127,7 @@ describe("ShipTimeCharteringGeneric", () => {
   })
 
   describe("Close contract", async() => {
-    it("should close contract by charter, in the end of charter time and without open dispute", async function () {
+    it("Should close contract by charter, in the end of charter time and without open dispute", async function () {
       const contractTimes = await shipTimeChartering.contractTimes();
       const endDateTime = parseInt(contractTimes[1]);
       await ethers.provider.send("evm_mine", [endDateTime]);
@@ -142,13 +142,13 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events[0].args.charterer).to.equal(charterer.address);
     });
 
-    it("should not allow a non-charterer to close the charter", async () => {
+    it("Should not allow a non-charterer to close the charter", async () => {
       await expect(
         shipTimeChartering.connect(shipOwner).closeCharter()
       ).to.be.revertedWith("Only the charterer can close the charter");
     });
 
-    it("should calculate early cancellation penalty", async() => {
+    it("Should calculate early cancellation penalty", async() => {
       const returnCalculation = await shipTimeChartering.earlyCancellationPenalty();
       const charterTime = 90 * 24 //3 month in hours
       const earlyCancellationPenaltyPerHour = 1 // setUpContract function parameter
@@ -156,7 +156,7 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(parseInt(returnCalculation)).to.equal(charterTime * earlyCancellationPenaltyPerHour);
     })
 
-    it("calculate early cancellation penalty should return zero, if charter period finish", async() => {
+    it("Should calculate early cancellation penalty return zero, if charter period finish", async() => {
       const contractTimes = await shipTimeChartering.contractTimes();
       const endDateTime = parseInt(contractTimes[1]);
       await ethers.provider.send("evm_mine", [endDateTime]);
@@ -166,13 +166,13 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(parseInt(returnCalculation)).to.equal(0);
     })
 
-    it("should not allow to close if charterer not pay early cancellation penalty", async () => {
+    it("Should not allow to close if charterer not pay early cancellation penalty", async () => {
       await expect(
         shipTimeChartering.connect(charterer).closeCharter()
       ).to.be.revertedWith("Deposit early cancellation penalty");
     });
 
-    it("should close if charterer pay early cancellation penalty", async () => {
+    it("Should close if charterer pay early cancellation penalty", async () => {
       const returnCalculation = await shipTimeChartering.earlyCancellationPenalty();
       const depositValue = parseInt(returnCalculation);
 
@@ -188,7 +188,7 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events[0].args.charterer).to.equal(charterer.address);
     });
   
-    it("should not allow to close the charter if it has not started yet", async function () {
+    it("Should not allow to close the charter if it has not started yet", async function () {
       [shipOwner, charterer, arbiter_1, arbiter_2, arbiter_3, chainteringService] = await ethers.getSigners();
       const shipTimeChartering = await ethers.getContractFactory("ShipTimeCharteringGeneric");
       const contractDeployWithoutStart = await shipTimeChartering.deploy(
@@ -205,25 +205,148 @@ describe("ShipTimeCharteringGeneric", () => {
       ).to.be.revertedWith("Charter cannot be closed if it not started");
     });
   
-    // it("should charter pay any amount due before close the contract", async() => {
-      //PRIMEIRO DEFINIR COMO SERA ACUMULADO ESSE VALOR DEVIDO!
-    // })
+    it("Should pay amount due Chaintering service before close the contract", async() => {
 
-    // it("should not allow to close the charter if there is an open dispute", async function () {
+    })
+
+    it("Should charter pay any amount due before close the contract", async() => {
+      //PRIMEIRO DEFINIR COMO SERA ACUMULADO ESSE VALOR DEVIDO!
+    })
+
+    it("Should not allow to close the charter if there is an open dispute", async function () {
       // await shipTimeChartering.connect(charterer).startCharter(1);
       
-      //CRIAR FUNÇÃO DE ABRIR UMA DISPUTA PRIMEIRO PARA PODER TESTAR
+      // CRIAR FUNÇÃO DE ABRIR UMA DISPUTA PRIMEIRO PARA PODER TESTAR
 
-    //   await expect(
-    //     shipTimeCharteringGeneric.connect(charterer).closeCharter()
-    //   ).to.be.revertedWith("Charter cannot be closed if there's some dispute opened");
-    // });
+      // await expect(
+      //   shipTimeCharteringGeneric.connect(charterer).closeCharter()
+      // ).to.be.revertedWith("Charter cannot be closed if there's some dispute opened");
+    });
   })
 
   describe("Disputes", async() => {
     it("Should inform if there is no open dispute", async() => {
       const isSomeOpenDispute = await shipTimeChartering.checkOpenDispute();
       expect(isSomeOpenDispute).to.equal(false);
+    })
+
+    it("Should dispute be open by charterer or ship owner, informing period, reason and value", async() => {
+
+    })
+
+    it("Should dispute be judge by three arbiters, informed on contract deploy", async() => {
+
+    })
+
+    it("Should increase dispute value on amount due, if charterer wins", async() => {
+
+    })
+
+    it("Should decrease dispute value on amount due, if ship owner wins", async() => {
+      
+    })
+
+    it("Should be closed after all three arbiters judge", async() => {
+
+    })
+  })
+
+  describe("Report vessel operations by ship owner", async() => {
+    it("Should save position departure, position arrive, is bad weather conditions, oil consuption and operation status", async() => {
+
+    })
+
+    it("Should calculate avarange speed", async() => {
+
+    })
+
+    it("Should check if contract minimum speed was reached, if vessel was under way", async() => {
+
+    })
+
+    it("Should check broadcast data if ship owner report bad weather condition", async() => {
+
+    })
+
+    it("Should open a dispute if ship owner report bad weather and broadcast contest", async() => {
+
+    })
+
+    it("Should allow avarange speed less than contract minimum speed, if bad weather", async() => {
+
+    })
+
+    it("Should allow oil consuption superior, if bad weather", async() => {
+
+    })
+
+    it("Should check if reported oil consuption is less or equal contract oil consuption for operation", async() => {
+
+    })
+
+    it("Should calculate penalty, if speed not reached", async() => {
+
+    })
+
+    it("Should calculate penalty, if oil consume exceed the agreed", async() => {
+
+    })
+
+    it("Should add amount due ship owner for operation time", async() => {
+
+    })
+
+  })
+  
+  describe("Pay charter", async() => {
+    it("Should pay ship owner all amount due in pay day", async() => {
+
+    })
+    
+    it("Should pay Chaintering service when deposit amount", async() => {
+  
+    })
+
+    it("Should calculate charterer penalty, for late payment", async() => {
+
+    })
+
+    it("Should convert dolar contract values to ether", async() => {
+      
+    })
+  })
+
+  describe("Fuel supply", async() => {
+    it("Should ship owner inform oil's quantity and date of supply", async() => {
+
+    })
+
+    it("Should only ship owner can report fuel supply", async() => {
+
+    })
+
+    it("Should emit a fuel supply event", async() => {
+
+    })
+  })
+
+  describe("Change service owner", async () => {
+    it("Should Chaintering service can be changed", async() => { 
+
+    })
+
+    it("Should only actual owner change to new owner", async() => {
+
+    })
+  })
+
+  describe("Oracle service", async() => {
+    it("Should convert ether to dolar", async() => {
+
+    })
+
+    it("Should integrate with broadcast weather service", async() => {
+
     })
   })
 });
