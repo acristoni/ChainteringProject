@@ -2,25 +2,44 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract ShipTimeCharteringGeneric is Initializable {
-    address payable public shipOwner;
-    address payable public charterer;
-    address payable public arbiter_1;
-    address payable public arbiter_2;
-    address payable public arbiter_3;
-    address payable public chainteringService;
-    uint32 public charterDolarDailyRate;
-    uint256 public startDateTime;
-    uint256 public endDateTime;
-    bool public isChartered;
-    uint32 public vesselIMOnumber; 
-    uint32 public vesselMMSInumber; 
-    uint256 public monthlyPayday;
-    uint8 public averageCruisingSpeed;
-    uint8 public averageOilConsumptionTonsPerHour;
+    using SafeMath for uint256;
+
+    Parties public parties;
+    ContractTimes public contractTimes;
+    VesselData public vesselData;
+    ContractValues public contractValues;
+    
+    //chater data
+    Dispute[] public allDisputes;
+
+    // //ShipOwnerReport
     mapping(uint256 day => uint16 oilTonsQuantity) public oilSupply;
-    mapping(uint256 day => VesselData vesselReport) public vesselDailyReport;
+    mapping(uint256 day => VesselReport vesselReport) public vesselDailyReport;
+    
+    //contract types
+    struct ContractValues {
+        uint32 charterPerHour;
+        uint8 chainteringServicePayPerHour;
+        uint256 earlyCancellationPenaltyPerHour;
+    }
+    struct VesselData {
+        uint32 vesselIMOnumber; 
+        uint8 averageCruisingSpeed;
+        uint8 averageOilConsumptionTonsPerHour;
+    }
+    struct Dispute {
+        uint256 startTime;
+        uint256 endTime;
+        string reason;
+        address[] arbitersVoted;
+        mapping(address => bool) votes;
+        bool isClose;
+        uint32 value;
+        Party partyOpenDispute;
+    }
     struct Location {
         int32 latitude; // degrees * 10^7
         int32 longitude; // degrees * 10^7
@@ -33,31 +52,32 @@ contract ShipTimeCharteringGeneric is Initializable {
         offHire,
         suppling    
     }
-    struct VesselData {
+    enum Party {
+        ShipOwner,
+        Charterer
+    }
+    struct Parties {
+        address payable shipOwner;
+        address payable charterer;
+        address payable arbiter_1;
+        address payable arbiter_2;
+        address payable arbiter_3;
+        address payable chainteringService;
+    }
+    struct ContractTimes {
+        uint256 startDateTime;
+        uint256 endDateTime;
+        uint256 monthlyPayday;
+    }
+    struct VesselReport {
         OperationStatus operationStatus;
         Location veeselPosition;
-    }
-    enum NavStatus {
-        UnderwayUsingEngine,
-        AtAnchor,
-        NotUnderCommand,
-        RestrictedManeuverability,
-        ConstrainedByDraught,
-        Moored,
-        Aground,
-        EngagedInFishing,
-        UnderwaySailing,
-        AIS_SART,
-        Reserved1,
-        Reserved2,
-        Reserved3,
-        Reserved4,
-        Undefined
+        uint16 dailyOilConsuption;
     }
 
     
-    event CharterAgreed(address indexed shipOwner, address indexed charterer, uint256 price, uint256 start, uint256 end);
-    event CharterCancelled(address indexed shipOwner, address indexed charterer);
+    event CharterStarted(address indexed shipOwner, address indexed charterer, uint256 price, uint256 start, uint256 end);
+    event CharterClosed(address indexed shipOwner, address indexed charterer);
     
     constructor(
         address payable _shipOwner,
@@ -65,57 +85,74 @@ contract ShipTimeCharteringGeneric is Initializable {
         address payable _arbiter_1,
         address payable _arbiter_2,
         address payable _arbiter_3,
-        address payable _chainteringService,
-        uint32 _charterDolarDailyRate, 
-        uint32 _vesselIMOnumber,
-        uint32 _vesselMMSInumber,
+        address payable _chainteringService
+    ) {
+        parties.shipOwner = _shipOwner;
+        parties.charterer = _charterer;
+        parties.arbiter_1 = _arbiter_1;
+        parties.arbiter_2 = _arbiter_2;
+        parties.arbiter_3 = _arbiter_3;
+        parties.chainteringService = _chainteringService;
+    }
+
+    function setUpContract(
         uint256 _monthlyPayday,
+        uint32 _charterPerHour, 
+        uint8 _chainteringServicePayPerHour,
         uint8 _averageCruisingSpeed,
-        uint8 _averageOilConsumptionTonsPerHour,
-        uint256 _startDateTime, 
-        uint256 _endDateTime) {
-        shipOwner = _shipOwner;
-        charterer = _charterer;
-        arbiter_1 = _arbiter_1;
-        arbiter_2 = _arbiter_2;
-        arbiter_3 = _arbiter_3;
-        chainteringService = _chainteringService;
-        charterDolarDailyRate = _charterDolarDailyRate;
-        vesselIMOnumber = _vesselIMOnumber;
-        vesselMMSInumber = _vesselMMSInumber;
-        monthlyPayday = _monthlyPayday;
-        averageCruisingSpeed = _averageCruisingSpeed;
-        averageOilConsumptionTonsPerHour = _averageOilConsumptionTonsPerHour;
-        startDateTime = _startDateTime;
-        endDateTime = _endDateTime;       
+        uint32 _vesselIMOnumber,
+        uint8 _averageOilConsumptionTonsPerHour, 
+        uint256 _earlyCancellationPenaltyPerHour
+    ) external {
+        contractTimes.monthlyPayday = _monthlyPayday;
+        contractValues.charterPerHour = _charterPerHour;
+        contractValues.chainteringServicePayPerHour = _chainteringServicePayPerHour;
+        contractValues.earlyCancellationPenaltyPerHour = _earlyCancellationPenaltyPerHour;    
+        vesselData.averageCruisingSpeed = _averageCruisingSpeed;
+        vesselData.vesselIMOnumber = _vesselIMOnumber;
+        vesselData.averageOilConsumptionTonsPerHour = _averageOilConsumptionTonsPerHour;
     }
     
-    function agreeCharter() public payable {
-        require(msg.sender != shipOwner, "Ship owner cannot charter their own ship");
-        require(msg.value == charterDolarDailyRate, "Charter price must be paid in full");
-        require(block.timestamp < startDateTime, "Charter cannot start in the past");
-        require(!isChartered, "Ship is already chartered");
+    function startCharter(uint8 chartersTimeMonths) public payable {
+        require(msg.sender == parties.charterer, "Only charterer can start the charter ship");
+        contractTimes.startDateTime = block.timestamp;
+        contractTimes.endDateTime = block.timestamp.add(chartersTimeMonths * 30 days);
         
-        charterer = payable(msg.sender);
-        isChartered = true;
-        
-        emit CharterAgreed(shipOwner, charterer, charterDolarDailyRate, startDateTime, endDateTime);
+        emit CharterStarted(parties.shipOwner, parties.charterer, contractValues.charterPerHour, contractTimes.startDateTime, contractTimes.endDateTime);
     }
     
-    function cancelCharter() public {
-        require(msg.sender == charterer, "Only the charterer can cancel the charter");
-        require(block.timestamp < startDateTime, "Charter cannot be cancelled after it has started");
+    // function closeCharter() payable public {
+    //     require(msg.sender == charterer, "Only the charterer can close the charter");
+    //     require(isChartered, "Charter cannot be closed if it not started");
+
+    //     // bool isSomeOpenDispute;
+
+    //     // if (allDisputes.length > 0) {
+    //     //     for(uint i = 0; i < allDisputes.length; i++) {
+    //     //         if (allDisputes[i].isClose == false) {
+    //     //             isSomeOpenDispute = true;
+    //     //         }
+    //     //     }
+    //     // }
+
+    //     // require(isSomeOpenDispute == false, "Charter cannot be closed if there's some dispute opened");
+
+    //     if (block.timestamp < endDateTime) {
+    //         uint256 diferenceBetweenDatesInHours = (endDateTime - block.timestamp) / 3600;
+    //         amountDueShipOwner = earlyCancellationPenaltyPerHour * diferenceBetweenDatesInHours;
+    //         amountDueChainteringService = amountDueChainteringService * diferenceBetweenDatesInHours;
+
+    //         require(msg.value == (amountDueShipOwner + amountDueChainteringService), "Should Charterer deposit amount due ship owner and Chaintering service to close the contract");
+    //     }
+
+    //     (bool sentChainteringService, ) = chainteringService.call{value: amountDueChainteringService}("");
+    //     require(sentChainteringService, "Failed to send ether");
         
-        isChartered = false;
-        charterer.transfer(charterDolarDailyRate);
+    //     (bool sentShipOwner, ) = shipOwner.call{value: amountDueShipOwner}("");
+    //     require(sentShipOwner, "Failed to send ether");
         
-        emit CharterCancelled(shipOwner, charterer);
-    }
-    
-    function withdrawFunds() public {
-        require(msg.sender == shipOwner, "Only the ship owner can withdraw funds");
-        require(block.timestamp > endDateTime, "Charter must be completed before funds can be withdrawn");
+    //     isChartered = false;
         
-        shipOwner.transfer(address(this).balance);
-    }
+    //     emit CharterClosed(shipOwner, charterer);
+    // }
 }
