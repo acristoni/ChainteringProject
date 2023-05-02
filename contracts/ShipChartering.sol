@@ -131,12 +131,9 @@ contract ShipTimeCharteringGeneric is Initializable {
             return 0;
         }
     }
-    
-    function closeCharter() payable public {
-        require(msg.sender == parties.charterer, "Only the charterer can close the charter");
-        require(contractTimes.startDateTime < block.timestamp, "Charter cannot be closed if it not started");
 
-        bool isSomeOpenDispute;
+    function checkOpenDispute() public view returns (bool _isSomeOpenDispute){
+         bool isSomeOpenDispute;
 
         if (allDisputes.length > 0) {
             for(uint i = 0; i < allDisputes.length; i++) {
@@ -146,13 +143,21 @@ contract ShipTimeCharteringGeneric is Initializable {
             }
         }
 
+        return isSomeOpenDispute;
+    }
+    
+    function closeCharter() payable public {
+        require(msg.sender == parties.charterer, "Only the charterer can close the charter");
+        require(contractTimes.startDateTime < block.timestamp, "Charter cannot be closed if it not started");
+
+        bool isSomeOpenDispute = checkOpenDispute();
         require(isSomeOpenDispute == false, "Charter cannot be closed if there's some dispute opened");
 
         uint256 amountDue = earlyCancellationPenalty();
         if (amountDue > 0) {
-            require(msg.value == amountDue, "To deposit early cancellation penalty");
+            require(msg.value == amountDue, "Deposit early cancellation penalty");
             (bool sentShipOwner, ) = parties.shipOwner.call{value: amountDue}("");
-            require(sentShipOwner, "Failed to send ether");
+            require(sentShipOwner, "Failed to send amount due ship owner");
         }
         
         emit CharterClosed(parties.shipOwner, parties.charterer);
