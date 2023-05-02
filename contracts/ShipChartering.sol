@@ -120,39 +120,41 @@ contract ShipTimeCharteringGeneric is Initializable {
         
         emit CharterStarted(parties.shipOwner, parties.charterer, contractValues.charterPerHour, contractTimes.startDateTime, contractTimes.endDateTime);
     }
+
+    function earlyCancellationPenalty() public view returns ( uint _amountDueShipOwner ){
+        if (block.timestamp < contractTimes.endDateTime) {
+            uint256 diferenceBetweenDatesInHours = (contractTimes.endDateTime - block.timestamp) / 3600;
+            uint256 amountDueShipOwner = contractValues.earlyCancellationPenaltyPerHour * diferenceBetweenDatesInHours;
+
+            return amountDueShipOwner;
+        } else {
+            return 0;
+        }
+    }
     
-    // function closeCharter() payable public {
-    //     require(msg.sender == charterer, "Only the charterer can close the charter");
-    //     require(isChartered, "Charter cannot be closed if it not started");
+    function closeCharter() payable public {
+        require(msg.sender == parties.charterer, "Only the charterer can close the charter");
+        require(contractTimes.startDateTime < block.timestamp, "Charter cannot be closed if it not started");
 
-    //     // bool isSomeOpenDispute;
+        bool isSomeOpenDispute;
 
-    //     // if (allDisputes.length > 0) {
-    //     //     for(uint i = 0; i < allDisputes.length; i++) {
-    //     //         if (allDisputes[i].isClose == false) {
-    //     //             isSomeOpenDispute = true;
-    //     //         }
-    //     //     }
-    //     // }
+        if (allDisputes.length > 0) {
+            for(uint i = 0; i < allDisputes.length; i++) {
+                if (allDisputes[i].isClose == false) {
+                    isSomeOpenDispute = true;
+                }
+            }
+        }
 
-    //     // require(isSomeOpenDispute == false, "Charter cannot be closed if there's some dispute opened");
+        require(isSomeOpenDispute == false, "Charter cannot be closed if there's some dispute opened");
 
-    //     if (block.timestamp < endDateTime) {
-    //         uint256 diferenceBetweenDatesInHours = (endDateTime - block.timestamp) / 3600;
-    //         amountDueShipOwner = earlyCancellationPenaltyPerHour * diferenceBetweenDatesInHours;
-    //         amountDueChainteringService = amountDueChainteringService * diferenceBetweenDatesInHours;
-
-    //         require(msg.value == (amountDueShipOwner + amountDueChainteringService), "Should Charterer deposit amount due ship owner and Chaintering service to close the contract");
-    //     }
-
-    //     (bool sentChainteringService, ) = chainteringService.call{value: amountDueChainteringService}("");
-    //     require(sentChainteringService, "Failed to send ether");
+        uint256 amountDue = earlyCancellationPenalty();
+        if (amountDue > 0) {
+            require(msg.value == amountDue, "To deposit early cancellation penalty");
+            (bool sentShipOwner, ) = parties.shipOwner.call{value: amountDue}("");
+            require(sentShipOwner, "Failed to send ether");
+        }
         
-    //     (bool sentShipOwner, ) = shipOwner.call{value: amountDueShipOwner}("");
-    //     require(sentShipOwner, "Failed to send ether");
-        
-    //     isChartered = false;
-        
-    //     emit CharterClosed(shipOwner, charterer);
-    // }
+        emit CharterClosed(parties.shipOwner, parties.charterer);
+    }
 }

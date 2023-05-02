@@ -34,6 +34,9 @@ describe("ShipTimeCharteringGeneric", () => {
       10, // averageOilConsumptionTonsPerHour
       10000, // earlyCancellationPenaltyPerHour
     );
+
+    //Start 3 month contract
+    await shipTimeChartering.connect(charterer).startCharter(3);
   });
 
   describe("Deploy new Contract", async() => {
@@ -80,10 +83,7 @@ describe("ShipTimeCharteringGeneric", () => {
   })
 
   describe("Start ship chartering", async() => {
-    it("should start the charter ship", async function () {
-      // Start the charter
-      await shipTimeChartering.connect(charterer).startCharter(3);
-  
+    it("should start the charter ship", async function () {  
       // Check the start date time and end date time
       const contractTimes = await shipTimeChartering.contractTimes();
       const startDateTime = parseInt(contractTimes[0]);
@@ -108,4 +108,71 @@ describe("ShipTimeCharteringGeneric", () => {
     })
   })
 
+  describe("Close contract", async() => {
+    it("should close contract by charter, in the end of charter time and without open dispute", async function () {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const endDateTime = parseInt(contractTimes[1]);
+      await ethers.provider.send("evm_mine", [endDateTime]);
+      
+      await shipTimeChartering.connect(charterer).closeCharter()
+
+      // Check the emitted event
+      const filter = shipTimeChartering.filters.CharterClosed();
+      const events = await shipTimeChartering.queryFilter(filter);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.shipOwner).to.equal(shipOwner.address);
+      expect(events[0].args.charterer).to.equal(charterer.address);
+    });
+
+    it("should not allow a non-charterer to close the charter", async function () {
+      await expect(
+        shipTimeChartering.connect(shipOwner).closeCharter()
+      ).to.be.revertedWith("Only the charterer can close the charter");
+    });
+
+    it("should calculate early cancellation penalty", async() => {
+      const returnCalculation = await shipTimeChartering.earlyCancellationPenalty();
+      const charterTime = 90 * 24 //3 month in hours
+      const earlyCancellationPenaltyPerHour = 10000 // setUpContract function parameter
+
+      expect(parseInt(returnCalculation)).to.equal(charterTime * earlyCancellationPenaltyPerHour);
+    })
+
+    it("calculate early cancellation penalty should return zero, if charter period finish", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const endDateTime = parseInt(contractTimes[1]);
+      await ethers.provider.send("evm_mine", [endDateTime]);
+
+      const returnCalculation = await shipTimeChartering.earlyCancellationPenalty();
+
+      expect(parseInt(returnCalculation)).to.equal(0);
+    })
+  
+    // it("should not allow to close the charter if it has not started yet", async function () {
+    //   const contractTimes = await shipTimeChartering.contractTimes();
+    //   const endDateTime = parseInt(contractTimes[1]);
+    //   await ethers.provider.send("evm_mine", [endDateTime]);
+      
+    //   await shipTimeChartering.connect(charterer).closeCharter()
+
+    //   await expect(
+    //     shipTimeChartering.connect(charterer).closeCharter()
+    //   ).to.be.revertedWith("Charter cannot be closed if it not started");
+    // });
+  
+    // it("should not allow to close the charter if there is an open dispute", async function () {
+    //   await shipTimeCharteringGeneric.connect(ethers.provider.getSigner(1)).startCharter(1);
+    //   await shipTimeCharteringGeneric.connect(ethers.provider.getSigner(1)).openDispute("reason");
+    //   await expect(
+    //     shipTimeCharteringGeneric.connect(ethers.provider.getSigner(1)).closeCharter()
+    //   ).to.be.revertedWith("Charter cannot be closed if there's some dispute opened");
+    // });
+  
+    // it("should allow to close the charter if there are no open disputes and the charter has started", async function () {
+    //   await shipTimeCharteringGeneric.connect(ethers.provider.getSigner(1)).startCharter(1);
+    //   await shipTimeCharteringGeneric.connect(ethers.provider.getSigner(1)).closeCharter();
+    //   const charterTimes = await shipTimeCharteringGeneric.contractTimes();
+    //   expect(charterTimes.startDateTime).to.be.above(0);
+    // });
+  })
 });
