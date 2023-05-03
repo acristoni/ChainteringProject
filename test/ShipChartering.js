@@ -204,9 +204,13 @@ describe("ShipTimeCharteringGeneric", () => {
         contractDeployWithoutStart.connect(charterer).closeCharter()
       ).to.be.revertedWith("Charter cannot be closed if it not started");
     });
-  
-    it("Should pay amount due Chaintering service before close the contract", async() => {
 
+    it("Should ship operation be off hire to close contract", async() => {
+
+    })
+
+    it("Should not close contract if ship is not off hire", async() => {
+      
     })
 
     it("Should charter pay any amount due before close the contract", async() => {
@@ -252,8 +256,45 @@ describe("ShipTimeCharteringGeneric", () => {
   })
 
   describe("Report vessel operations by ship owner", async() => {
-    it("Should save position departure, position arrive, is bad weather conditions, oil consuption and operation status", async() => {
+    it("Should save date departure, date arrival, position departure, position arrive, is bad weather conditions, oil consuption and operational status", async() => {
+      //write new ship operation report
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
+      const latitudeDeparture = -23.90320425631785;
+      const longitudeDerparture = -46.07624389163475;
+      const latitudeArrival = -25.248573511757215;
+      const longitudeArrival = -44.76222770000078; //about 120 nautical miles
 
+      await shipTimeChartering
+        .connect(shipOwner)
+        .newOperationReport(
+          dateDeparture,
+          dateArrival,
+          ethers.utils.parseUnits(String(latitudeDeparture), 18),
+          ethers.utils.parseUnits(String(longitudeDerparture), 18),
+          ethers.utils.parseUnits(String(latitudeArrival), 18),
+          ethers.utils.parseUnits(String(longitudeArrival), 18),
+          false, // is good Weather, 
+          200, // oil consuption per operation hour, 
+          3 // operation code for under way
+        );
+      
+      const reportDataSaved = await shipTimeChartering.getOperationReport(dateDeparture);
+        expect(reportDataSaved.startDate).to.equal(dateDeparture);
+        expect(reportDataSaved.endDate).to.equal(dateArrival);
+        expect(reportDataSaved.startPosition[0]).to.equal(ethers.utils.parseUnits(String(latitudeDeparture), 18));
+        expect(reportDataSaved.startPosition[1]).to.equal(ethers.utils.parseUnits(String(longitudeDerparture), 18));
+        expect(reportDataSaved.endPosition[0]).to.equal(ethers.utils.parseUnits(String(latitudeArrival), 18));
+        expect(reportDataSaved.endPosition[1]).to.equal(ethers.utils.parseUnits(String(longitudeArrival), 18));
+        expect(reportDataSaved.isBadWeatherDuringOps).to.equal(false);
+        expect(reportDataSaved.opsOilConsuption).to.equal(200);
+        expect(reportDataSaved.operationStatus).to.equal(3);
+    })
+
+    it("Should calculate distance between two points", async() => {
+      
     })
 
     it("Should calculate avarange speed", async() => {
@@ -347,6 +388,22 @@ describe("ShipTimeCharteringGeneric", () => {
 
     it("Should integrate with broadcast weather service", async() => {
 
+    })
+
+    it("Should be bad weather condition if waves heigth more than 2.5 meters", async() => {
+
+    })
+
+    it("Should be bad weather condition if wind speed more than 30 nautical knots", async() => {
+      
+    })
+
+    it("Should be bad weather condition if sea current speed more than 1.5 nautical knots", async() => {
+      
+    })
+
+    it("Should not be bad weather condition if any of above consitions happen", async() => {
+      
     })
   })
 });

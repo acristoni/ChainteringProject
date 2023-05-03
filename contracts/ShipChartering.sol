@@ -18,7 +18,7 @@ contract ShipTimeCharteringGeneric is Initializable {
 
     // //ShipOwnerReport
     mapping(uint256 day => uint16 oilTonsQuantity) public oilSupply;
-    mapping(uint256 day => VesselReport vesselReport) public vesselOpsReport;
+    mapping(uint256 date => VesselReport vesselReport) public vesselOpsReport;
     
     //contract types
     struct ContractValues {
@@ -42,8 +42,8 @@ contract ShipTimeCharteringGeneric is Initializable {
         DiputeParty partyOpenDispute;
     }
     struct Location {
-        int32 latitude; // degrees * 10^7
-        int32 longitude; // degrees * 10^7
+        int256 latitude; // degrees * 10^7
+        int256 longitude; // degrees * 10^7
     }
     enum OperationStatus {
         standBy,
@@ -72,10 +72,13 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint256 monthlyPayday;
     }
     struct VesselReport {
-        OperationStatus operationStatus;
+        uint256 startDate;
+        uint256 endDate;
         Location startPosition;
         Location endPosition;
+        bool isBadWeatherDuringOps;
         uint16 opsOilConsuption;
+        OperationStatus operationStatus;
     }
 
     
@@ -124,7 +127,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         vesselData.oilConsumptionTonsHour[OperationStatus.waintingOrders] = _consuptionstandBy;
     }
     
-    function startCharter(uint8 chartersTimeMonths) public payable {
+    function startCharter(uint8 chartersTimeMonths) external {
         require(msg.sender == parties.charterer, "Only charterer can start the charter ship");
         contractTimes.startDateTime = block.timestamp;
         contractTimes.endDateTime = block.timestamp.add(chartersTimeMonths * 30 days);
@@ -135,6 +138,40 @@ contract ShipTimeCharteringGeneric is Initializable {
             contractValues.charterPerHour, 
             contractTimes.startDateTime, 
             contractTimes.endDateTime);
+    }
+
+    function newOperationReport(
+        uint256 dateDeparture,
+        uint256 dateArrival,
+        int256 latitudeDeparture,
+        int256 longitudeDerparture,
+        int256 latitudeArrival,
+        int256 longitudeArrival,
+        bool isBadWeather, 
+        uint8 oilConsuption, 
+        OperationStatus operationCode ) external {
+            VesselReport memory vesselReport;
+            Location memory departurePosition;
+            Location memory arrivalPosition;
+
+            departurePosition.latitude = latitudeDeparture;
+            departurePosition.longitude = longitudeDerparture;
+            arrivalPosition.latitude = latitudeArrival;
+            arrivalPosition.longitude = longitudeArrival;
+
+            vesselReport.startPosition = departurePosition;
+            vesselReport.endPosition = arrivalPosition;
+            vesselReport.isBadWeatherDuringOps = isBadWeather;
+            vesselReport.operationStatus = operationCode;
+            vesselReport.opsOilConsuption = oilConsuption;
+            vesselReport.endDate = dateArrival;
+            vesselReport.startDate = dateDeparture;
+
+            vesselOpsReport[dateDeparture] = vesselReport;
+    }
+
+    function getOperationReport(uint256 date) external view returns (VesselReport memory vesselReport) {
+        return vesselOpsReport[date];
     }
 
     function earlyCancellationPenalty() public view returns ( uint _amountDueShipOwner ){
