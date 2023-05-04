@@ -32,7 +32,7 @@ describe("ShipTimeCharteringGeneric", () => {
     //function call after deploy to finish the contract variable set up, due the 'Stack too deep' it can't be done in constructor.
     await shipTimeChartering.setUpContract(
       5, // monthlyPayday
-      30000, // charterPerHour
+      1000, // charterPerHour
       75, // chainteringServicePayPerHour
       12, // minimumCruisingSpeed
       9751779, // vesselIMOnumber
@@ -79,7 +79,7 @@ describe("ShipTimeCharteringGeneric", () => {
       const minimumCruisingSpeed = vesselData[1];
   
       expect(monthlyPayday).to.equal(5);
-      expect(charterPerHour).to.equal(30000);
+      expect(charterPerHour).to.equal(1000);
       expect(chainteringServicePayPerHour).to.equal(75);
       expect(earlyCancellationPenaltyPerHour).to.equal(1);
       expect(vesselIMOnumber).to.equal(9751779);
@@ -123,7 +123,7 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events.length).to.equal(1);
       expect(events[0].args.shipOwner).to.equal(shipOwner.address);
       expect(events[0].args.charterer).to.equal(charterer.address);
-      expect(events[0].args.price).to.equal(30000);
+      expect(events[0].args.price).to.equal(1000);
       expect(events[0].args.start).to.equal(startDateTime);
       expect(events[0].args.end).to.equal(endDateTime);
     });
@@ -348,30 +348,18 @@ describe("ShipTimeCharteringGeneric", () => {
     })
 
     it("Should calculate avarage speed", async() => {
-      const contractTimes = await shipTimeChartering.contractTimes();
-      const startDateTime = parseInt(contractTimes[0]);
-      const dateDeparture = startDateTime; 
-      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
-
       const avarageSpeed = await shipTimeChartering.avarageSpeed(
-        120, //distance in nautical miles
-        dateDeparture,
-        dateArrival
+        10, // operation time duration in hours
+        120 //distance in nautical miles
       );
 
       expect(avarageSpeed).to.equal(12)
     })
 
     it("Should check if contract minimum speed was reached", async() => {
-      const contractTimes = await shipTimeChartering.contractTimes();
-      const startDateTime = parseInt(contractTimes[0]);
-      const dateDeparture = startDateTime; 
-      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
-
       const response = await shipTimeChartering.checkMinimumOperationalSpeed(
-        120, //distance in nautical miles
-        dateDeparture,
-        dateArrival
+        10, // operation time duration in hours
+        120 //distance in nautical miles
       )
 
       expect( response.isMinimumSpeedReached ).to.equal(true)
@@ -410,7 +398,6 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events.length).to.equal(1);
       expect(events[0].args.avarageSpeed).to.equal(10);
       expect(events[0].args.minimumCruisingSpeed).to.equal(12);
-      expect(events[0].args.dateArrival).to.equal(dateArrival);
     })
 
     it("Should check if contract minimum speed was reached, only if vessel was under way", async() => {
@@ -460,14 +447,8 @@ describe("ShipTimeCharteringGeneric", () => {
     })
 
     it("Should check if reported oil consuption is less or equal contract oil consuption for operation", async() => {
-      const contractTimes = await shipTimeChartering.contractTimes();
-      const startDateTime = parseInt(contractTimes[0]);
-      const dateDeparture = startDateTime; 
-      const dateArrival = dateDeparture + (10 * 3600); //10 hours ops
-      
       const response = await shipTimeChartering.checkOilConsuption(
-        dateDeparture,
-        dateArrival,  
+        10, // operation time duration in hours 
         200, //oil consuption tons per hour, 
         2 //operationCode for vessel under way
       );
@@ -512,11 +493,41 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events.length).to.equal(1);
       expect(events[0].args.consuptionAgreed).to.equal(20);
       expect(events[0].args.consuptionReported).to.equal(30);
-      expect(events[0].args.dateArrival).to.equal(dateArrival);
     })
 
     it("Should add amount due ship owner for operation time", async() => {
+      //write new ship operation report
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
+      const latitudeDeparture = -23.90320425631785;
+      const longitudeDerparture = -46.07624389163475;
+      const latitudeArrival = -25.248573511757215;
+      const longitudeArrival = -44.76222770000078; //about 120 nautical miles
+      
+      const contractValuesBeforeOperation = await shipTimeChartering.contractValues()
+      const amountDueBeforeOperation = contractValuesBeforeOperation[3]
 
+      await shipTimeChartering
+        .connect(shipOwner)
+        .newOperationReport(
+          dateDeparture,
+          dateArrival,
+          ethers.utils.parseUnits(String(latitudeDeparture), 18),
+          ethers.utils.parseUnits(String(longitudeDerparture), 18),
+          ethers.utils.parseUnits(String(latitudeArrival), 18),
+          ethers.utils.parseUnits(String(longitudeArrival), 18),
+          120, //distance in nautical miles
+          false, // is good Weather, 
+          200, // oil consuption per operation, 
+          2 // operation code for under way
+        );
+
+        const contractValuesAfterOperation = await shipTimeChartering.contractValues()
+        const amountDueAfterOperation = contractValuesAfterOperation[3]
+
+      expect(amountDueAfterOperation - amountDueBeforeOperation).to.equal(10000)
     })
 
   })

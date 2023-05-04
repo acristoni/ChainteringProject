@@ -27,6 +27,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint32 charterPerHour;
         uint8 chainteringServicePayPerHour;
         uint256 earlyCancellationPenaltyPerHour;
+        uint256 amountDueShipOwner;
     }
     struct VesselData {
         uint32 vesselIMOnumber; 
@@ -95,8 +96,8 @@ contract ShipTimeCharteringGeneric is Initializable {
     
     event CharterStarted(address indexed shipOwner, address indexed charterer, uint256 price, uint256 start, uint256 end);
     event CharterClosed(address indexed shipOwner, address indexed charterer);
-    event BelowContractualSpeed( uint256 avarageSpeed, uint8 minimumCruisingSpeed, uint256 dateArrival);
-    event ConsumptionAboveAgreed( uint8 consuptionAgreed, uint256 consuptionReported, uint256 dateArrival );
+    event BelowContractualSpeed( uint256 avarageSpeed, uint8 minimumCruisingSpeed);
+    event ConsumptionAboveAgreed( uint8 consuptionAgreed, uint256 consuptionReported);
     
     constructor(
         address payable _shipOwner,
@@ -188,52 +189,37 @@ contract ShipTimeCharteringGeneric is Initializable {
 
         vesselData.oilTotalConsuption += oilConsuption;
 
+        uint256 timeDiference = dateArrival - dateDeparture;
+        uint256 operationHoursDuration =  timeDiference.div(3600);
+
         if(operationCode == OperationStatus.underWay) {
-            ReturnCheckSpeed memory returnCheckSpeed = checkMinimumOperationalSpeed( 
-                                                            distance, 
-                                                            dateDeparture, 
-                                                            dateArrival 
-                                                        );
+            ReturnCheckSpeed memory returnCheckSpeed = checkMinimumOperationalSpeed( operationHoursDuration, distance );
             if (!returnCheckSpeed.isMinimumSpeedReached) {
                 emit BelowContractualSpeed(
-                    10, 
-                    vesselData.minimumCruisingSpeed, 
-                    dateArrival);
+                    returnCheckSpeed.speed, 
+                    vesselData.minimumCruisingSpeed );
             }
         }
 
-        ReturnCheckOil memory returnCheckOil = checkOilConsuption( 
-                                                dateDeparture, 
-                                                dateArrival,  
-                                                oilConsuption, 
-                                                operationCode
-                                            );
+        ReturnCheckOil memory returnCheckOil = checkOilConsuption( operationHoursDuration, oilConsuption, operationCode );
         if (!returnCheckOil.isConsuptionAccordingContract) {
             emit ConsumptionAboveAgreed( 
                 contractConsuptionByOperationalType(operationCode), 
-                returnCheckOil.oilConsuptionDuringOperation,
-                dateArrival 
+                returnCheckOil.oilConsuptionDuringOperation
             );
         }
+
+        contractValues.amountDueShipOwner += contractValues.charterPerHour * operationHoursDuration;
     }
 
-    function avarageSpeed( 
-        uint256 distance, 
-        uint256 dateDeparture, 
-        uint256 dateArrival ) pure public returns (uint256 _avaraSpeed) {
-        
-        uint256 timeDiference = dateArrival - dateDeparture;
-        uint256 timeDiferenceHours = timeDiference.div(3600);
-        uint256 speed = distance.div(timeDiferenceHours);
+    function avarageSpeed( uint256 operationHoursDuration, uint256 distance ) pure public returns (uint256 _avaraSpeed) {
+        uint256 speed = distance.div(operationHoursDuration);
         return speed;
     }
 
-    function checkMinimumOperationalSpeed(     
-        uint256 distance, 
-        uint256 dateDeparture, 
-        uint256 dateArrival ) view public returns (ReturnCheckSpeed memory) {
+    function checkMinimumOperationalSpeed( uint256 operationHoursDuration, uint256 distance ) view public returns (ReturnCheckSpeed memory) {
         
-        uint256 _avarageSpeed = avarageSpeed( distance, dateDeparture, dateArrival );
+        uint256 _avarageSpeed = avarageSpeed( operationHoursDuration, distance );
         ReturnCheckSpeed memory returnFunction;
         returnFunction.speed = _avarageSpeed;
 
@@ -246,17 +232,10 @@ contract ShipTimeCharteringGeneric is Initializable {
         }
     }
 
-    function checkOilConsuption( 
-        uint256 dateDeparture,
-        uint256 dateArrival, 
-        uint256 oilConsuption, 
-        OperationStatus operationCode ) view public returns (ReturnCheckOil memory) {
+    function checkOilConsuption( uint256 operationHoursDuration, uint256 oilConsuption, OperationStatus operationCode ) view public returns (ReturnCheckOil memory) {
         
         ReturnCheckOil memory returnCheckOil;
-        uint256 timeDiference = dateArrival - dateDeparture;
-        uint256 timeDiferenceHours = timeDiference.div(3600);
-
-        uint256 oilConsuptionDuringOperation = oilConsuption.div(timeDiferenceHours);
+        uint256 oilConsuptionDuringOperation = oilConsuption.div(operationHoursDuration);
         returnCheckOil.oilConsuptionDuringOperation = oilConsuptionDuringOperation;
 
         uint32 oilConsuptionContract = contractConsuptionByOperationalType(operationCode);
