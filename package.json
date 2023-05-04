@@ -21,6 +21,7 @@
     "eslint-config-next": "13.3.4",
     "hardhat": "^2.14.0",
     "next": "13.3.4",
+    "prb-math": "^2.4.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "typescript": "5.0.4"

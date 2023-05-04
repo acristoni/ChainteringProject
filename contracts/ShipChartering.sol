@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
+import "prb-math/contracts/PRBMathSD59x18.sol"; 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "hardhat/console.sol";
 
 contract ShipTimeCharteringGeneric is Initializable {
     using SafeMath for uint256;
+    using PRBMathSD59x18 for int256;
 
     Parties public parties;
     ContractTimes public contractTimes;
@@ -28,8 +30,9 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
     struct VesselData {
         uint32 vesselIMOnumber; 
-        uint8 averageCruisingSpeed;
+        uint8 minimumCruisingSpeed;        
         mapping(OperationStatus => uint8) oilConsumptionTonsHour;
+        uint32 oilTotalConsuption;
     }
     struct Dispute {
         uint256 startTime;
@@ -39,7 +42,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         mapping(address => bool) votes;
         bool isClose;
         uint32 value;
-        DiputeParty partyOpenDispute;
+        DiputeParties partyOpenDispute;
     }
     struct Location {
         int256 latitude; // degrees * 10^7
@@ -54,7 +57,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         atAnchor,
         suppling    
     }
-    enum DiputeParty {
+    enum DiputeParties {
         ShipOwner,
         Charterer
     }
@@ -76,14 +79,19 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint256 endDate;
         Location startPosition;
         Location endPosition;
+        uint256 distance;
         bool isBadWeatherDuringOps;
-        uint16 opsOilConsuption;
+        uint32 opsOilConsuption;
         OperationStatus operationStatus;
     }
-
+    struct ReturnCheckSpeed {
+        bool isMinimumSpeedReached;
+        uint256 speed;    
+    }         
     
     event CharterStarted(address indexed shipOwner, address indexed charterer, uint256 price, uint256 start, uint256 end);
     event CharterClosed(address indexed shipOwner, address indexed charterer);
+    event BelowContractualSpeed( uint256 avarageSpeed, uint8 minimumCruisingSpeed, uint256 dateArrival);
     
     constructor(
         address payable _shipOwner,
@@ -105,7 +113,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint256 _monthlyPayday,
         uint32 _charterPerHour, 
         uint8 _chainteringServicePayPerHour,
-        uint8 _averageCruisingSpeed,
+        uint8 _minimumCruisingSpeed,
         uint32 _vesselIMOnumber,
         uint256 _earlyCancellationPenaltyPerHour,
         uint8 _consuptionstandBy,
@@ -116,7 +124,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         contractValues.charterPerHour = _charterPerHour;
         contractValues.chainteringServicePayPerHour = _chainteringServicePayPerHour;
         contractValues.earlyCancellationPenaltyPerHour = _earlyCancellationPenaltyPerHour;    
-        vesselData.averageCruisingSpeed = _averageCruisingSpeed;
+        vesselData.minimumCruisingSpeed = _minimumCruisingSpeed;
         vesselData.vesselIMOnumber = _vesselIMOnumber;
         vesselData.oilConsumptionTonsHour[OperationStatus.standBy] = _consuptionstandBy;
         vesselData.oilConsumptionTonsHour[OperationStatus.atOperation] = _consuptionAtOperation;
@@ -131,6 +139,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         require(msg.sender == parties.charterer, "Only charterer can start the charter ship");
         contractTimes.startDateTime = block.timestamp;
         contractTimes.endDateTime = block.timestamp.add(chartersTimeMonths * 30 days);
+        vesselData.oilTotalConsuption = 0;
         
         emit CharterStarted(
             parties.shipOwner, 
@@ -147,8 +156,9 @@ contract ShipTimeCharteringGeneric is Initializable {
         int256 longitudeDerparture,
         int256 latitudeArrival,
         int256 longitudeArrival,
+        uint256 distance,
         bool isBadWeather, 
-        uint8 oilConsuption, 
+        uint32 oilConsuption, 
         OperationStatus operationCode ) external {
             VesselReport memory vesselReport;
             Location memory departurePosition;
@@ -166,8 +176,46 @@ contract ShipTimeCharteringGeneric is Initializable {
             vesselReport.opsOilConsuption = oilConsuption;
             vesselReport.endDate = dateArrival;
             vesselReport.startDate = dateDeparture;
+            vesselReport.distance = distance;
 
             vesselOpsReport[dateDeparture] = vesselReport;
+
+            vesselData.oilTotalConsuption += oilConsuption;
+
+            ReturnCheckSpeed memory returnCheckSpeed = checkMinimumOperationalSpeed( distance, dateDeparture, dateArrival );
+            if (!returnCheckSpeed.isMinimumSpeedReached) {
+                emit BelowContractualSpeed(
+                    10, 
+                    vesselData.minimumCruisingSpeed, 
+                    dateArrival);
+            }
+    }
+
+    function avarageSpeed( 
+            uint256 distance, 
+            uint256 dateDeparture, 
+            uint256 dateArrival ) pure public returns (uint256 _avaraSpeed) {
+        uint256 timeDiference = dateArrival - dateDeparture;
+        uint256 timeDiferenceHours = timeDiference.div(3600);
+        uint256 speed = distance.div(timeDiferenceHours);
+        return speed;
+    }
+
+    function checkMinimumOperationalSpeed(     
+            uint256 distance, 
+            uint256 dateDeparture, 
+            uint256 dateArrival ) view public returns (ReturnCheckSpeed memory) {
+        uint256 _avarageSpeed = avarageSpeed( distance, dateDeparture, dateArrival );
+        ReturnCheckSpeed memory returnFunction;
+        returnFunction.speed = _avarageSpeed;
+
+        if (_avarageSpeed < vesselData.minimumCruisingSpeed) {  
+            returnFunction.isMinimumSpeedReached = false;
+            return returnFunction;
+        } else {
+            returnFunction.isMinimumSpeedReached = true;
+            return returnFunction;
+        }
     }
 
     function getOperationReport(uint256 date) external view returns (VesselReport memory vesselReport) {
@@ -186,7 +234,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         }
     }
 
-    function contractConsuptionByOperation(OperationStatus status) view public returns (uint8 oilConsuption) {
+    function contractConsuptionByOperationalType(OperationStatus status) view public returns (uint8 oilConsuption) {
         return vesselData.oilConsumptionTonsHour[status];
     }
 

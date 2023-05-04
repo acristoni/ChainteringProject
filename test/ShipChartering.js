@@ -10,6 +10,11 @@ describe("ShipTimeCharteringGeneric", () => {
   let arbiter_3;
   let chainteringService;
 
+  function degreesToRadians(degrees) {
+    var radians = degrees * Math.PI/180;
+    return radians;
+  }
+
   beforeEach(async () => {
     // Deploy the contract before each test
     [shipOwner, charterer, arbiter_1, arbiter_2, arbiter_3, chainteringService] = await ethers.getSigners();
@@ -29,7 +34,7 @@ describe("ShipTimeCharteringGeneric", () => {
       5, // monthlyPayday
       30000, // charterPerHour
       75, // chainteringServicePayPerHour
-      12, // averageCruisingSpeed
+      12, // minimumCruisingSpeed
       9751779, // vesselIMOnumber
       1, // earlyCancellationPenaltyPerHour
       5, // consuptionstandBy
@@ -71,24 +76,24 @@ describe("ShipTimeCharteringGeneric", () => {
   
       const vesselData = await shipTimeChartering.vesselData();
       const vesselIMOnumber = vesselData[0];
-      const averageCruisingSpeed = vesselData[1];
+      const minimumCruisingSpeed = vesselData[1];
   
       expect(monthlyPayday).to.equal(5);
       expect(charterPerHour).to.equal(30000);
       expect(chainteringServicePayPerHour).to.equal(75);
       expect(earlyCancellationPenaltyPerHour).to.equal(1);
       expect(vesselIMOnumber).to.equal(9751779);
-      expect(averageCruisingSpeed).to.equal(12);
+      expect(minimumCruisingSpeed).to.equal(12);
     });
 
     it("Should oil consuption by ship operation set up", async () => {
-      const oilConsuptionStandBy = await shipTimeChartering.contractConsuptionByOperation(0);
-      const oilConsuptionAtOperation = await shipTimeChartering.contractConsuptionByOperation(1);
-      const oilConsuptionUnderWay = await shipTimeChartering.contractConsuptionByOperation(2);
-      const oilConsuptionWaitingOrders = await shipTimeChartering.contractConsuptionByOperation(3);
-      const oilConsuptionOffHire = await shipTimeChartering.contractConsuptionByOperation(4);
-      const oilConsuptionAtAnchor = await shipTimeChartering.contractConsuptionByOperation(5);
-      const oilConsuptionSuppling = await shipTimeChartering.contractConsuptionByOperation(6);
+      const oilConsuptionStandBy = await shipTimeChartering.contractConsuptionByOperationalType(0);
+      const oilConsuptionAtOperation = await shipTimeChartering.contractConsuptionByOperationalType(1);
+      const oilConsuptionUnderWay = await shipTimeChartering.contractConsuptionByOperationalType(2);
+      const oilConsuptionWaitingOrders = await shipTimeChartering.contractConsuptionByOperationalType(3);
+      const oilConsuptionOffHire = await shipTimeChartering.contractConsuptionByOperationalType(4);
+      const oilConsuptionAtAnchor = await shipTimeChartering.contractConsuptionByOperationalType(5);
+      const oilConsuptionSuppling = await shipTimeChartering.contractConsuptionByOperationalType(6);
       
       expect(oilConsuptionStandBy).to.equal(5);
       expect(oilConsuptionAtOperation).to.equal(25);
@@ -107,6 +112,10 @@ describe("ShipTimeCharteringGeneric", () => {
       const startDateTime = parseInt(contractTimes[0]);
       const endDateTime = parseInt(contractTimes[1]);
       expect(endDateTime).to.equal(startDateTime + 3 * 30 * 24 * 60 * 60); // 3 months in seconds
+      
+      const vesselDataBeforeReport = await shipTimeChartering.vesselData()
+      const totalOilConsuption = vesselDataBeforeReport[2]
+      expect(totalOilConsuption).to.equal(0);
   
       // Check the emitted event
       const filter = shipTimeChartering.filters.CharterStarted();
@@ -226,6 +235,14 @@ describe("ShipTimeCharteringGeneric", () => {
       //   shipTimeCharteringGeneric.connect(charterer).closeCharter()
       // ).to.be.revertedWith("Charter cannot be closed if there's some dispute opened");
     });
+
+    it("Should close if all oil consuption are equal to oil supply", async() => {
+
+    })
+
+    it("Should discount from amount due the diference between oil supply and oil consuption, if it's positive", async() => {
+
+    })
   })
 
   describe("Disputes", async() => {
@@ -276,8 +293,9 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(longitudeDerparture), 18),
           ethers.utils.parseUnits(String(latitudeArrival), 18),
           ethers.utils.parseUnits(String(longitudeArrival), 18),
+          120, //distance in nautical miles
           false, // is good Weather, 
-          200, // oil consuption per operation hour, 
+          200, // oil consuption per operation, 
           3 // operation code for under way
         );
       
@@ -288,20 +306,115 @@ describe("ShipTimeCharteringGeneric", () => {
         expect(reportDataSaved.startPosition[1]).to.equal(ethers.utils.parseUnits(String(longitudeDerparture), 18));
         expect(reportDataSaved.endPosition[0]).to.equal(ethers.utils.parseUnits(String(latitudeArrival), 18));
         expect(reportDataSaved.endPosition[1]).to.equal(ethers.utils.parseUnits(String(longitudeArrival), 18));
+        expect(reportDataSaved.distance).to.equal(120);
         expect(reportDataSaved.isBadWeatherDuringOps).to.equal(false);
         expect(reportDataSaved.opsOilConsuption).to.equal(200);
         expect(reportDataSaved.operationStatus).to.equal(3);
     })
 
-    it("Should calculate distance between two points", async() => {
+    it("Should sum oil consuption during operation to total oil consuption in contract storage", async() => {
+      //write new ship operation report
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
+      const latitudeDeparture = -23.90320425631785;
+      const longitudeDerparture = -46.07624389163475;
+      const latitudeArrival = -25.248573511757215;
+      const longitudeArrival = -44.76222770000078; //about 120 nautical miles
       
+      const vesselDataBeforeReport = await shipTimeChartering.vesselData()
+      const totalOilConsuptionBeforeReport = vesselDataBeforeReport[2]
+
+      await shipTimeChartering
+        .connect(shipOwner)
+        .newOperationReport(
+          dateDeparture,
+          dateArrival,
+          ethers.utils.parseUnits(String(latitudeDeparture), 18),
+          ethers.utils.parseUnits(String(longitudeDerparture), 18),
+          ethers.utils.parseUnits(String(latitudeArrival), 18),
+          ethers.utils.parseUnits(String(longitudeArrival), 18),
+          120, //distance in nautical miles
+          false, // is good Weather, 
+          200, // oil consuption per operation, 
+          3 // operation code for under way
+        );
+
+      const vesselDataAfterReport = await shipTimeChartering.vesselData()
+      const totalOilConsuptionAfterReport = vesselDataAfterReport[2]
+
+      expect(totalOilConsuptionAfterReport - totalOilConsuptionBeforeReport).to.equal(200)
     })
 
-    it("Should calculate avarange speed", async() => {
+    it("Should calculate avarage speed", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
+
+      const avarageSpeed = await shipTimeChartering.avarageSpeed(
+        120, //distance in nautical miles
+        dateDeparture,
+        dateArrival
+      );
+
+      expect(avarageSpeed).to.equal(12)
+    })
+
+    it("Should check if contract minimum speed was reached", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
+
+      const response = await shipTimeChartering.checkMinimumOperationalSpeed(
+        120, //distance in nautical miles
+        dateDeparture,
+        dateArrival
+      )
+
+      expect( response.isMinimumSpeedReached ).to.equal(true)
+      expect( response.speed ).to.equal(12)
 
     })
 
-    it("Should check if contract minimum speed was reached, if vessel was under way", async() => {
+    it("Should emit a BelowContractualSpeed event if contract minimum speed was NOT reached", async() => {
+        //write new ship operation report
+        const contractTimes = await shipTimeChartering.contractTimes();
+        const startDateTime = parseInt(contractTimes[0]);
+        const dateDeparture = startDateTime; 
+        const dateArrival = dateDeparture + (12 * 3600); //12 hours voyage - AVARAGE SPEED 10
+        const latitudeDeparture = -23.90320425631785;
+        const longitudeDerparture = -46.07624389163475;
+        const latitudeArrival = -25.248573511757215;
+        const longitudeArrival = -44.76222770000078; //about 120 nautical miles
+
+        await shipTimeChartering
+          .connect(shipOwner)
+          .newOperationReport(
+            dateDeparture,
+            dateArrival,
+            ethers.utils.parseUnits(String(latitudeDeparture), 18),
+            ethers.utils.parseUnits(String(longitudeDerparture), 18),
+            ethers.utils.parseUnits(String(latitudeArrival), 18),
+            ethers.utils.parseUnits(String(longitudeArrival), 18),
+            120, //distance in nautical miles
+            false, // is good Weather, 
+            200, // oil consuption per operation, 
+            3 // operation code for under way
+          );
+        
+        // Check the emitted event
+        const filter = shipTimeChartering.filters.BelowContractualSpeed();
+        const events = await shipTimeChartering.queryFilter(filter);
+        expect(events.length).to.equal(1);
+        expect(events[0].args.avarageSpeed).to.equal(10);
+        expect(events[0].args.minimumCruisingSpeed).to.equal(12);
+        expect(events[0].args.dateArrival).to.equal(dateArrival);
+    })
+
+    it("Should check if contract minimum speed was reached, only if vessel was under way", async() => {
 
     })
 
@@ -313,7 +426,7 @@ describe("ShipTimeCharteringGeneric", () => {
 
     })
 
-    it("Should allow avarange speed less than contract minimum speed, if bad weather", async() => {
+    it("Should allow avarage speed less than contract minimum speed, if bad weather", async() => {
 
     })
 
