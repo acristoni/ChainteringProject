@@ -165,62 +165,63 @@ contract ShipTimeCharteringGeneric is Initializable {
         bool isBadWeather, 
         uint256 oilConsuption, 
         OperationStatus operationCode ) external {
-            VesselReport memory vesselReport;
-            Location memory departurePosition;
-            Location memory arrivalPosition;
 
-            departurePosition.latitude = latitudeDeparture;
-            departurePosition.longitude = longitudeDerparture;
-            arrivalPosition.latitude = latitudeArrival;
-            arrivalPosition.longitude = longitudeArrival;
+        VesselReport memory vesselReport;
+        Location memory departurePosition;
+        Location memory arrivalPosition;
 
-            vesselReport.startPosition = departurePosition;
-            vesselReport.endPosition = arrivalPosition;
-            vesselReport.isBadWeatherDuringOps = isBadWeather;
-            vesselReport.operationStatus = operationCode;
-            vesselReport.opsOilConsuption = oilConsuption;
-            vesselReport.endDate = dateArrival;
-            vesselReport.startDate = dateDeparture;
-            vesselReport.distance = distance;
+        departurePosition.latitude = latitudeDeparture;
+        departurePosition.longitude = longitudeDerparture;
+        arrivalPosition.latitude = latitudeArrival;
+        arrivalPosition.longitude = longitudeArrival;
 
-            vesselOpsReport[dateDeparture] = vesselReport;
+        vesselReport.startPosition = departurePosition;
+        vesselReport.endPosition = arrivalPosition;
+        vesselReport.isBadWeatherDuringOps = isBadWeather;
+        vesselReport.operationStatus = operationCode;
+        vesselReport.opsOilConsuption = oilConsuption;
+        vesselReport.endDate = dateArrival;
+        vesselReport.startDate = dateDeparture;
+        vesselReport.distance = distance;
 
-            vesselData.oilTotalConsuption += oilConsuption;
+        vesselOpsReport[dateDeparture] = vesselReport;
 
-            if(operationCode == OperationStatus.underWay) {
-                ReturnCheckSpeed memory returnCheckSpeed = checkMinimumOperationalSpeed( 
-                                                                distance, 
-                                                                dateDeparture, 
-                                                                dateArrival 
-                                                            );
-                if (!returnCheckSpeed.isMinimumSpeedReached) {
-                    emit BelowContractualSpeed(
-                        10, 
-                        vesselData.minimumCruisingSpeed, 
-                        dateArrival);
-                }
+        vesselData.oilTotalConsuption += oilConsuption;
+
+        if(operationCode == OperationStatus.underWay) {
+            ReturnCheckSpeed memory returnCheckSpeed = checkMinimumOperationalSpeed( 
+                                                            distance, 
+                                                            dateDeparture, 
+                                                            dateArrival 
+                                                        );
+            if (!returnCheckSpeed.isMinimumSpeedReached) {
+                emit BelowContractualSpeed(
+                    10, 
+                    vesselData.minimumCruisingSpeed, 
+                    dateArrival);
             }
+        }
 
-            ReturnCheckOil memory returnCheckOil = checkOilConsuption( 
-                                                    dateDeparture, 
-                                                    dateArrival,  
-                                                    oilConsuption, 
-                                                    operationCode
-                                                );
-            if (!returnCheckOil.isConsuptionAccordingContract) {
-                emit ConsumptionAboveAgreed( 
-                    vesselData.oilConsumptionTonsHour[operationCode], 
-                    returnCheckOil.oilConsuptionDuringOperation,
-                    dateArrival 
-                );
-            }
-
+        ReturnCheckOil memory returnCheckOil = checkOilConsuption( 
+                                                dateDeparture, 
+                                                dateArrival,  
+                                                oilConsuption, 
+                                                operationCode
+                                            );
+        if (!returnCheckOil.isConsuptionAccordingContract) {
+            emit ConsumptionAboveAgreed( 
+                contractConsuptionByOperationalType(operationCode), 
+                returnCheckOil.oilConsuptionDuringOperation,
+                dateArrival 
+            );
+        }
     }
 
     function avarageSpeed( 
-            uint256 distance, 
-            uint256 dateDeparture, 
-            uint256 dateArrival ) pure public returns (uint256 _avaraSpeed) {
+        uint256 distance, 
+        uint256 dateDeparture, 
+        uint256 dateArrival ) pure public returns (uint256 _avaraSpeed) {
+        
         uint256 timeDiference = dateArrival - dateDeparture;
         uint256 timeDiferenceHours = timeDiference.div(3600);
         uint256 speed = distance.div(timeDiferenceHours);
@@ -258,7 +259,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint256 oilConsuptionDuringOperation = oilConsuption.div(timeDiferenceHours);
         returnCheckOil.oilConsuptionDuringOperation = oilConsuptionDuringOperation;
 
-        uint32 oilConsuptionContract = vesselData.oilConsumptionTonsHour[operationCode];
+        uint32 oilConsuptionContract = contractConsuptionByOperationalType(operationCode);
 
         if (oilConsuptionDuringOperation > oilConsuptionContract) {
             returnCheckOil.isConsuptionAccordingContract = false;
