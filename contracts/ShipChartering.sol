@@ -32,7 +32,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint32 vesselIMOnumber; 
         uint8 minimumCruisingSpeed;        
         mapping(OperationStatus => uint8) oilConsumptionTonsHour;
-        uint32 oilTotalConsuption;
+        uint256 oilTotalConsuption;
     }
     struct Dispute {
         uint256 startTime;
@@ -81,13 +81,13 @@ contract ShipTimeCharteringGeneric is Initializable {
         Location endPosition;
         uint256 distance;
         bool isBadWeatherDuringOps;
-        uint32 opsOilConsuption;
+        uint256 opsOilConsuption;
         OperationStatus operationStatus;
     }
     struct ReturnCheckSpeed {
         bool isMinimumSpeedReached;
         uint256 speed;    
-    }         
+    }   
     
     event CharterStarted(address indexed shipOwner, address indexed charterer, uint256 price, uint256 start, uint256 end);
     event CharterClosed(address indexed shipOwner, address indexed charterer);
@@ -158,7 +158,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         int256 longitudeArrival,
         uint256 distance,
         bool isBadWeather, 
-        uint32 oilConsuption, 
+        uint256 oilConsuption, 
         OperationStatus operationCode ) external {
             VesselReport memory vesselReport;
             Location memory departurePosition;
@@ -205,9 +205,10 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
 
     function checkMinimumOperationalSpeed(     
-            uint256 distance, 
-            uint256 dateDeparture, 
-            uint256 dateArrival ) view public returns (ReturnCheckSpeed memory) {
+        uint256 distance, 
+        uint256 dateDeparture, 
+        uint256 dateArrival ) view public returns (ReturnCheckSpeed memory) {
+        
         uint256 _avarageSpeed = avarageSpeed( distance, dateDeparture, dateArrival );
         ReturnCheckSpeed memory returnFunction;
         returnFunction.speed = _avarageSpeed;
@@ -218,6 +219,26 @@ contract ShipTimeCharteringGeneric is Initializable {
         } else {
             returnFunction.isMinimumSpeedReached = true;
             return returnFunction;
+        }
+    }
+
+    function checkOilConsuption( 
+        uint256 dateDeparture,
+        uint256 dateArrival, 
+        uint256 oilConsuption, 
+        OperationStatus operationCode ) view public returns (bool isConsuptionAccordingContract) {
+        
+        uint256 timeDiference = dateArrival - dateDeparture;
+        uint256 timeDiferenceHours = timeDiference.div(3600);
+
+        uint256 oilConsuptionDuringOperation = oilConsuption.div(timeDiferenceHours);
+
+        uint32 oilConsuptionContract = vesselData.oilConsumptionTonsHour[operationCode];
+
+        if (oilConsuptionDuringOperation > oilConsuptionContract) {
+            return false;
+        } else {
+            return true;
         }
     }
 

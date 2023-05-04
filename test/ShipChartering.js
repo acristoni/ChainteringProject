@@ -418,7 +418,7 @@ describe("ShipTimeCharteringGeneric", () => {
       const contractTimes = await shipTimeChartering.contractTimes();
       const startDateTime = parseInt(contractTimes[0]);
       const dateDeparture = startDateTime; 
-      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage - AVARAGE SPEED 0 "stand by"
+      const dateArrival = dateDeparture + (10 * 3600); //10 hours - AVARAGE SPEED 0 "stand by"
       const latitude = -23.90320425631785;
       const longitude = -46.07624389163475; //same for start end end operation
 
@@ -460,14 +460,26 @@ describe("ShipTimeCharteringGeneric", () => {
     })
 
     it("Should check if reported oil consuption is less or equal contract oil consuption for operation", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (10 * 3600); //10 hours ops
+      
+      const isConsuptionAccordingContract = await shipTimeChartering.checkOilConsuption(
+        dateDeparture,
+        dateArrival,  
+        20, //oil consuption tons per hour, 
+        2 //operationCode for vessel under way
+      );
 
+      expect(isConsuptionAccordingContract).to.equal(true);
     })
 
-    it("Should calculate penalty, if speed not reached", async() => {
+    // it("Should calculate penalty, if speed not reached", async() => {
 
-    })
+    // })
 
-    it("Should calculate penalty, if oil consume exceed the agreed", async() => {
+    it("Should emit event consumption above agreed, if oil consume exceed the agreed", async() => {
 
     })
 
