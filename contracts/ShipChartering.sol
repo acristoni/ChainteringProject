@@ -182,12 +182,15 @@ contract ShipTimeCharteringGeneric is Initializable {
 
             vesselData.oilTotalConsuption += oilConsuption;
 
-            ReturnCheckSpeed memory returnCheckSpeed = checkMinimumOperationalSpeed( distance, dateDeparture, dateArrival );
-            if (!returnCheckSpeed.isMinimumSpeedReached) {
-                emit BelowContractualSpeed(
-                    10, 
-                    vesselData.minimumCruisingSpeed, 
-                    dateArrival);
+            if(operationCode == OperationStatus.underWay) {
+                console.log("entrei aqui");
+                ReturnCheckSpeed memory returnCheckSpeed = checkMinimumOperationalSpeed( distance, dateDeparture, dateArrival );
+                if (!returnCheckSpeed.isMinimumSpeedReached) {
+                    emit BelowContractualSpeed(
+                        10, 
+                        vesselData.minimumCruisingSpeed, 
+                        dateArrival);
+                }
             }
     }
 
