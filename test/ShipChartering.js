@@ -296,7 +296,7 @@ describe("ShipTimeCharteringGeneric", () => {
           120, //distance in nautical miles
           false, // is good Weather, 
           200, // oil consuption per operation, 
-          3 // operation code for under way
+          2 // operation code for under way
         );
       
       const reportDataSaved = await shipTimeChartering.getOperationReport(dateDeparture);
@@ -309,7 +309,7 @@ describe("ShipTimeCharteringGeneric", () => {
         expect(reportDataSaved.distance).to.equal(120);
         expect(reportDataSaved.isBadWeatherDuringOps).to.equal(false);
         expect(reportDataSaved.opsOilConsuption).to.equal(200);
-        expect(reportDataSaved.operationStatus).to.equal(3);
+        expect(reportDataSaved.operationStatus).to.equal(2);
     })
 
     it("Should sum oil consuption during operation to total oil consuption in contract storage", async() => {
@@ -338,7 +338,7 @@ describe("ShipTimeCharteringGeneric", () => {
           120, //distance in nautical miles
           false, // is good Weather, 
           200, // oil consuption per operation, 
-          3 // operation code for under way
+          2 // operation code for under way
         );
 
       const vesselDataAfterReport = await shipTimeChartering.vesselData()
@@ -376,46 +376,71 @@ describe("ShipTimeCharteringGeneric", () => {
 
       expect( response.isMinimumSpeedReached ).to.equal(true)
       expect( response.speed ).to.equal(12)
-
     })
 
     it("Should emit a BelowContractualSpeed event if contract minimum speed was NOT reached", async() => {
-        //write new ship operation report
-        const contractTimes = await shipTimeChartering.contractTimes();
-        const startDateTime = parseInt(contractTimes[0]);
-        const dateDeparture = startDateTime; 
-        const dateArrival = dateDeparture + (12 * 3600); //12 hours voyage - AVARAGE SPEED 10
-        const latitudeDeparture = -23.90320425631785;
-        const longitudeDerparture = -46.07624389163475;
-        const latitudeArrival = -25.248573511757215;
-        const longitudeArrival = -44.76222770000078; //about 120 nautical miles
+      //write new ship operation report
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (12 * 3600); //12 hours voyage - AVARAGE SPEED 10
+      const latitudeDeparture = -23.90320425631785;
+      const longitudeDerparture = -46.07624389163475;
+      const latitudeArrival = -25.248573511757215;
+      const longitudeArrival = -44.76222770000078; //about 120 nautical miles
 
-        await shipTimeChartering
-          .connect(shipOwner)
-          .newOperationReport(
-            dateDeparture,
-            dateArrival,
-            ethers.utils.parseUnits(String(latitudeDeparture), 18),
-            ethers.utils.parseUnits(String(longitudeDerparture), 18),
-            ethers.utils.parseUnits(String(latitudeArrival), 18),
-            ethers.utils.parseUnits(String(longitudeArrival), 18),
-            120, //distance in nautical miles
-            false, // is good Weather, 
-            200, // oil consuption per operation, 
-            3 // operation code for under way
-          );
-        
-        // Check the emitted event
-        const filter = shipTimeChartering.filters.BelowContractualSpeed();
-        const events = await shipTimeChartering.queryFilter(filter);
-        expect(events.length).to.equal(1);
-        expect(events[0].args.avarageSpeed).to.equal(10);
-        expect(events[0].args.minimumCruisingSpeed).to.equal(12);
-        expect(events[0].args.dateArrival).to.equal(dateArrival);
+      await shipTimeChartering
+        .connect(shipOwner)
+        .newOperationReport(
+          dateDeparture,
+          dateArrival,
+          ethers.utils.parseUnits(String(latitudeDeparture), 18),
+          ethers.utils.parseUnits(String(longitudeDerparture), 18),
+          ethers.utils.parseUnits(String(latitudeArrival), 18),
+          ethers.utils.parseUnits(String(longitudeArrival), 18),
+          120, //distance in nautical miles
+          false, // is good Weather, 
+          200, // oil consuption per operation, 
+          2 // operation code for under way
+        );
+      
+      // Check the emitted event
+      const filter = shipTimeChartering.filters.BelowContractualSpeed();
+      const events = await shipTimeChartering.queryFilter(filter);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.avarageSpeed).to.equal(10);
+      expect(events[0].args.minimumCruisingSpeed).to.equal(12);
+      expect(events[0].args.dateArrival).to.equal(dateArrival);
     })
 
     it("Should check if contract minimum speed was reached, only if vessel was under way", async() => {
+      //write new ship operation report
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage - AVARAGE SPEED 0 "stand by"
+      const latitude = -23.90320425631785;
+      const longitude = -46.07624389163475; //same for start end end operation
 
+      await shipTimeChartering
+        .connect(shipOwner)
+        .newOperationReport(
+          dateDeparture,
+          dateArrival,
+          ethers.utils.parseUnits(String(latitude), 18),
+          ethers.utils.parseUnits(String(longitude), 18),
+          ethers.utils.parseUnits(String(latitude), 18),
+          ethers.utils.parseUnits(String(longitude), 18),
+          0, //vessel stoped
+          false, // is good Weather, 
+          50, // oil consuption per operation, 
+          0 // operation code for stand by
+        );
+
+      // Check the emitted event
+      const filter = shipTimeChartering.filters.BelowContractualSpeed();
+      const events = await shipTimeChartering.queryFilter(filter);
+      expect(events.length).to.equal(0);
     })
 
     it("Should check broadcast data if ship owner report bad weather condition", async() => {
