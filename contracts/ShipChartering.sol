@@ -88,10 +88,15 @@ contract ShipTimeCharteringGeneric is Initializable {
         bool isMinimumSpeedReached;
         uint256 speed;    
     }   
+    struct ReturnCheckOil {
+        bool isConsuptionAccordingContract;
+        uint256 oilConsuptionDuringOperation;    
+    }   
     
     event CharterStarted(address indexed shipOwner, address indexed charterer, uint256 price, uint256 start, uint256 end);
     event CharterClosed(address indexed shipOwner, address indexed charterer);
     event BelowContractualSpeed( uint256 avarageSpeed, uint8 minimumCruisingSpeed, uint256 dateArrival);
+    event ConsumptionAboveAgreed( uint8 consuptionAgreed, uint256 consuptionReported, uint256 dateArrival );
     
     constructor(
         address payable _shipOwner,
@@ -183,8 +188,11 @@ contract ShipTimeCharteringGeneric is Initializable {
             vesselData.oilTotalConsuption += oilConsuption;
 
             if(operationCode == OperationStatus.underWay) {
-                console.log("entrei aqui");
-                ReturnCheckSpeed memory returnCheckSpeed = checkMinimumOperationalSpeed( distance, dateDeparture, dateArrival );
+                ReturnCheckSpeed memory returnCheckSpeed = checkMinimumOperationalSpeed( 
+                                                                distance, 
+                                                                dateDeparture, 
+                                                                dateArrival 
+                                                            );
                 if (!returnCheckSpeed.isMinimumSpeedReached) {
                     emit BelowContractualSpeed(
                         10, 
@@ -192,6 +200,21 @@ contract ShipTimeCharteringGeneric is Initializable {
                         dateArrival);
                 }
             }
+
+            ReturnCheckOil memory returnCheckOil = checkOilConsuption( 
+                                                    dateDeparture, 
+                                                    dateArrival,  
+                                                    oilConsuption, 
+                                                    operationCode
+                                                );
+            if (!returnCheckOil.isConsuptionAccordingContract) {
+                emit ConsumptionAboveAgreed( 
+                    vesselData.oilConsumptionTonsHour[operationCode], 
+                    returnCheckOil.oilConsuptionDuringOperation,
+                    dateArrival 
+                );
+            }
+
     }
 
     function avarageSpeed( 
@@ -226,19 +249,23 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint256 dateDeparture,
         uint256 dateArrival, 
         uint256 oilConsuption, 
-        OperationStatus operationCode ) view public returns (bool isConsuptionAccordingContract) {
+        OperationStatus operationCode ) view public returns (ReturnCheckOil memory) {
         
+        ReturnCheckOil memory returnCheckOil;
         uint256 timeDiference = dateArrival - dateDeparture;
         uint256 timeDiferenceHours = timeDiference.div(3600);
 
         uint256 oilConsuptionDuringOperation = oilConsuption.div(timeDiferenceHours);
+        returnCheckOil.oilConsuptionDuringOperation = oilConsuptionDuringOperation;
 
         uint32 oilConsuptionContract = vesselData.oilConsumptionTonsHour[operationCode];
 
         if (oilConsuptionDuringOperation > oilConsuptionContract) {
-            return false;
+            returnCheckOil.isConsuptionAccordingContract = false;
+            return returnCheckOil;
         } else {
-            return true;
+            returnCheckOil.isConsuptionAccordingContract = true;
+            return returnCheckOil;
         }
     }
 

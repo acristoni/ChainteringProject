@@ -465,14 +465,15 @@ describe("ShipTimeCharteringGeneric", () => {
       const dateDeparture = startDateTime; 
       const dateArrival = dateDeparture + (10 * 3600); //10 hours ops
       
-      const isConsuptionAccordingContract = await shipTimeChartering.checkOilConsuption(
+      const response = await shipTimeChartering.checkOilConsuption(
         dateDeparture,
         dateArrival,  
-        20, //oil consuption tons per hour, 
+        200, //oil consuption tons per hour, 
         2 //operationCode for vessel under way
       );
 
-      expect(isConsuptionAccordingContract).to.equal(true);
+      expect(response.isConsuptionAccordingContract).to.equal(true);
+      expect(response.oilConsuptionDuringOperation).to.equal(20);
     })
 
     // it("Should calculate penalty, if speed not reached", async() => {
@@ -480,7 +481,38 @@ describe("ShipTimeCharteringGeneric", () => {
     // })
 
     it("Should emit event consumption above agreed, if oil consume exceed the agreed", async() => {
+      //write new ship operation report
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
+      const latitudeDeparture = -23.90320425631785;
+      const longitudeDerparture = -46.07624389163475;
+      const latitudeArrival = -25.248573511757215;
+      const longitudeArrival = -44.76222770000078; //about 120 nautical miles
 
+      await shipTimeChartering
+        .connect(shipOwner)
+        .newOperationReport(
+          dateDeparture,
+          dateArrival,
+          ethers.utils.parseUnits(String(latitudeDeparture), 18),
+          ethers.utils.parseUnits(String(longitudeDerparture), 18),
+          ethers.utils.parseUnits(String(latitudeArrival), 18),
+          ethers.utils.parseUnits(String(longitudeArrival), 18),
+          120, //distance in nautical miles
+          false, // is good Weather, 
+          300, // oil consuption per operation, 
+          2 // operation code for under way
+        );
+
+      // Check the emitted event
+      const filter = shipTimeChartering.filters.ConsumptionAboveAgreed();
+      const events = await shipTimeChartering.queryFilter(filter);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.consuptionAgreed).to.equal(20);
+      expect(events[0].args.consuptionReported).to.equal(30);
+      expect(events[0].args.dateArrival).to.equal(dateArrival);
     })
 
     it("Should add amount due ship owner for operation time", async() => {
