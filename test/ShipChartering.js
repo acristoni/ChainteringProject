@@ -242,17 +242,216 @@ describe("ShipTimeCharteringGeneric", () => {
   })
 
   describe("Disputes", async() => {
+    it("Should dispute be open by charterer or ship owner, informing period, reason and value", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startTime = parseInt(contractTimes[0]);
+      const endTime = startTime + (10 * 3600); //10 hours voyage
+
+      await shipTimeChartering.createDispute(
+        startTime,
+        endTime,
+        "Not bad weather, as reported", //reason
+        10000, //value
+        1 // charterer is open this dispute
+      );
+
+      const isSomeOpenDispute = await shipTimeChartering.checkOpenDispute()
+
+      expect(isSomeOpenDispute).to.equal(true);
+    })
+
     it("Should inform if there is no open dispute", async() => {
       const isSomeOpenDispute = await shipTimeChartering.checkOpenDispute();
       expect(isSomeOpenDispute).to.equal(false);
     })
 
-    it("Should dispute be open by charterer or ship owner, informing period, reason and value", async() => {
+    it("Should be able to create as disputes as need", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startTime = parseInt(contractTimes[0]);
 
+      //first open dispute
+      await shipTimeChartering.createDispute(
+        startTime,
+        startTime + (10 * 3600), //10 hours voyage
+        "Not bad weather, as reported", //reason
+        10000, //value
+        1 // charterer is open this dispute
+      );
+
+      //second open dispute
+      await shipTimeChartering.createDispute(
+        startTime + (2 * 3600), //2 hours after contract start
+        startTime + (4 * 3600), //2 hours voyage
+        "Is bad weather, despiting oracle data", //reason
+        2000, //value
+        0 // ship owner is open this dispute
+      );
+
+      //third open dispute
+      await shipTimeChartering.createDispute(
+        startTime + (4 * 3600), //2 hours after contract start
+        startTime + (12 * 3600), //8 hours voyage
+        "Not off hire, crew member sick", //reason
+        8000, //value
+        0 // ship owner is open this dispute
+      );
+
+      const totalDisputes = await shipTimeChartering.totalDisputes();
+
+      expect(totalDisputes).to.equal(3);
     })
 
-    it("Should dispute be judge by three arbiters, informed on contract deploy", async() => {
+    it("Should dispute be judge by three arbiters", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startTime = parseInt(contractTimes[0]);
 
+      //first open dispute
+      await shipTimeChartering.createDispute(
+        startTime,
+        startTime + (10 * 3600), //10 hours voyage
+        "Not bad weather, as reported", //reason
+        10000, //value
+        1 // charterer is open this dispute
+      );
+    })
+
+    it("Should only contract arbiter judge", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startTime = parseInt(contractTimes[0]);
+
+      //first open dispute
+      await shipTimeChartering.createDispute(
+        startTime,
+        startTime + (10 * 3600), //10 hours voyage
+        "Not bad weather, as reported", //reason
+        10000, //value
+        1 // charterer is open this dispute
+      );
+
+      await expect(
+        shipTimeChartering
+          .connect(charterer)
+          .judgeDispute(
+            1, //dispute id
+            true //is reasonable
+          )
+      ).to.be.revertedWith("Only contract arbiters can judge");
+    })
+
+    it("Should emit ArbiterVote event", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startTime = parseInt(contractTimes[0]);
+
+      //first open dispute
+      await shipTimeChartering.createDispute(
+        startTime,
+        startTime + (10 * 3600), //10 hours voyage
+        "Not bad weather, as reported", //reason
+        10000, //value
+        1 // charterer is open this dispute
+      );
+
+      //judge dispute
+      await shipTimeChartering
+              .connect(arbiter_1)
+              .judgeDispute(
+                1, //dispute id
+                true //is reasonable
+              )
+
+      // Check the emitted event
+      const filter = shipTimeChartering.filters.ArbiterVote();
+      const events = await shipTimeChartering.queryFilter(filter);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.disputeId).to.equal(1);
+      expect(events[0].args.isReasonable).to.equal(true);
+      expect(events[0].args.arbiter).to.equal(arbiter_1.address);
+    })
+    
+    it("Should be closed after all three arbiters judge", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startTime = parseInt(contractTimes[0]);
+
+      //first open dispute
+      await shipTimeChartering.createDispute(
+        startTime,
+        startTime + (10 * 3600), //10 hours voyage
+        "Not bad weather, as reported", //reason
+        10000, //value
+        1 // charterer is open this dispute
+      );
+
+      //first vote
+      await shipTimeChartering
+              .connect(arbiter_1)
+              .judgeDispute(
+                1, //dispute id
+                true //is reasonable
+              )
+
+      //second vote
+      await shipTimeChartering
+              .connect(arbiter_2)
+              .judgeDispute(
+                1, //dispute id
+                true //is reasonable
+              )
+
+       //third vote
+       await shipTimeChartering
+              .connect(arbiter_3)
+              .judgeDispute(
+                1, //dispute id
+                true //is reasonable
+              )
+
+      const isSomeOpenDispute = await shipTimeChartering.checkOpenDispute();
+      expect(isSomeOpenDispute).to.equal(false);
+    })
+    
+    it("Should emit ResJudicata event, for close dispute", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startTime = parseInt(contractTimes[0]);
+
+      //first open dispute
+      await shipTimeChartering.createDispute(
+        startTime,
+        startTime + (10 * 3600), //10 hours voyage
+        "Not bad weather, as reported", //reason
+        10000, //value
+        1 // charterer is open this dispute
+      );
+
+      //first vote
+      await shipTimeChartering
+              .connect(arbiter_1)
+              .judgeDispute(
+                1, //dispute id
+                true //is reasonable
+              )
+
+      //second vote
+      await shipTimeChartering
+              .connect(arbiter_2)
+              .judgeDispute(
+                1, //dispute id
+                true //is reasonable
+              )
+
+      //third vote
+      await shipTimeChartering
+            .connect(arbiter_3)
+            .judgeDispute(
+              1, //dispute id
+              true //is reasonable
+            )
+      
+      // Check the emitted event
+      const filter = shipTimeChartering.filters.ResJudicata();
+      const events = await shipTimeChartering.queryFilter(filter);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.disputeId).to.equal(1);
+      expect(events[0].args.winningParty).to.equal(1);
     })
 
     it("Should increase dispute value on amount due, if charterer wins", async() => {
@@ -263,9 +462,6 @@ describe("ShipTimeCharteringGeneric", () => {
       
     })
 
-    it("Should be closed after all three arbiters judge", async() => {
-
-    })
   })
 
   describe("Report vessel operations by ship owner", async() => {

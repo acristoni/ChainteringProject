@@ -16,7 +16,8 @@ contract ShipTimeCharteringGeneric is Initializable {
     ContractValues public contractValues;
     
     //chater data
-    Dispute[] public allDisputes;
+    mapping(uint16 disputeId => Dispute) public allDisputes;
+    uint16 public totalDisputes = 0;
 
     // //ShipOwnerReport
     mapping(uint256 day => uint16 oilTonsQuantity) public oilSupply;
@@ -43,7 +44,8 @@ contract ShipTimeCharteringGeneric is Initializable {
         mapping(address => bool) votes;
         bool isClose;
         uint32 value;
-        DiputeParties partyOpenDispute;
+        DisputeParties partyOpenDispute;
+        DisputeParties winningParty;
     }
     struct Location {
         int256 latitude; // degrees * 10^7
@@ -58,9 +60,9 @@ contract ShipTimeCharteringGeneric is Initializable {
         atAnchor,
         suppling    
     }
-    enum DiputeParties {
-        ShipOwner,
-        Charterer
+    enum DisputeParties {
+        shipOwner,
+        charterer
     }
     struct Parties {
         address payable shipOwner;
@@ -100,6 +102,8 @@ contract ShipTimeCharteringGeneric is Initializable {
     event ConsumptionAboveAgreed( uint8 consuptionAgreed, uint256 consuptionReported);
     event ReportOperation(uint256 dateArrival, bool isBadWeather, OperationStatus operationCode);
     event SupplyReport(uint256 day, uint16 oilTonsQuantity);
+    event ArbiterVote(uint16 disputeId, bool isReasonable, address arbiter);
+    event ResJudicata(uint16 disputeId, DisputeParties winningParty);
 
     constructor(
         address payable _shipOwner,
@@ -284,16 +288,96 @@ contract ShipTimeCharteringGeneric is Initializable {
         return vesselData.oilConsumptionTonsHour[status];
     }
 
-    function checkOpenDispute() public view returns (bool _isSomeOpenDispute){
-         bool isSomeOpenDispute;
+    function createDispute(
+        uint256 startTime,
+        uint256 endTime,
+        string calldata reason,
+        uint32 value,
+        DisputeParties partyOpenDispute ) public {
+        
+        ++totalDisputes;
 
-        if (allDisputes.length > 0) {
-            for(uint i = 0; i < allDisputes.length; i++) {
-                if (allDisputes[i].isClose == false) {
-                    isSomeOpenDispute = true;
-                }
+        allDisputes[totalDisputes].startTime = startTime;
+        allDisputes[totalDisputes].endTime = endTime;
+        allDisputes[totalDisputes].reason = reason;
+        allDisputes[totalDisputes].value = value;
+        allDisputes[totalDisputes].partyOpenDispute = partyOpenDispute;
+
+    }
+
+    function judgeDispute(uint16 disputeId, bool isReasonable) external {
+        require(msg.sender == parties.arbiter_1 ||
+                msg.sender == parties.arbiter_2 ||
+                msg.sender == parties.arbiter_3, "Only contract arbiters can judge");
+        bool thisArbiterAlreadyVoted;
+
+        allDisputes[disputeId].votes[msg.sender] = isReasonable;
+
+        for (uint8 i = 0; i < allDisputes[disputeId].arbitersVoted.length; i++) {
+            if (allDisputes[disputeId].arbitersVoted[i] == msg.sender) {
+                thisArbiterAlreadyVoted = true;
             }
         }
+
+        if (!thisArbiterAlreadyVoted) {
+            allDisputes[disputeId].arbitersVoted.push(msg.sender);
+        }
+
+        emit ArbiterVote(disputeId, isReasonable, msg.sender);
+
+        closeDispute(disputeId);
+    }
+
+    function closeDispute(uint16 disputeId) public {
+        if (allDisputes[disputeId].arbitersVoted.length == 3 && !allDisputes[disputeId].isClose) {
+            allDisputes[disputeId].isClose = true;
+
+            uint8 isReasonableVote;
+            uint8 isNotReasonableVote;
+
+            if (allDisputes[disputeId].votes[parties.arbiter_1]) {
+                isReasonableVote++;
+            } else {
+                isNotReasonableVote--;
+            }
+
+            if (allDisputes[disputeId].votes[parties.arbiter_2]) {
+                isReasonableVote++;
+            } else {
+                isNotReasonableVote--;
+            }
+
+            if (allDisputes[disputeId].votes[parties.arbiter_3]) {
+                isReasonableVote++;
+            } else {
+                isNotReasonableVote--;
+            }
+
+            if (isReasonableVote > isNotReasonableVote) {
+                allDisputes[disputeId].winningParty = allDisputes[disputeId].partyOpenDispute;
+            } else
+            if (allDisputes[disputeId].partyOpenDispute == DisputeParties.shipOwner) {
+                allDisputes[disputeId].winningParty = DisputeParties.charterer;
+            } else
+            if (allDisputes[disputeId].partyOpenDispute == DisputeParties.charterer) {
+                allDisputes[disputeId].winningParty = DisputeParties.shipOwner;
+            }
+
+            allDisputes[disputeId].isClose = true;
+
+            emit ResJudicata(disputeId, allDisputes[disputeId].winningParty);
+            //mexer no amount due
+        } 
+    }
+
+    function checkOpenDispute() public view returns (bool _isSomeOpenDispute){
+        bool isSomeOpenDispute;
+
+        for(uint16 i = 1; i <= totalDisputes; i++) {
+            if (allDisputes[i].isClose == false) {
+                isSomeOpenDispute = true;
+            }
+        }        
 
         return isSomeOpenDispute;
     }
