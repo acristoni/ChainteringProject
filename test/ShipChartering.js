@@ -583,15 +583,45 @@ describe("ShipTimeCharteringGeneric", () => {
 
   describe("Fuel supply", async() => {
     it("Should ship owner inform oil's quantity and date of supply", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      await shipTimeChartering.connect(shipOwner).oilSupplyReport(
+        startDateTime, //date  of supply
+        250 //quantity of oil supplied, in tons
+      )
 
+      const oilQuantityReported = await shipTimeChartering.consultOilSupplyReport(startDateTime)
+
+      expect(oilQuantityReported).to.equal(250);
     })
 
     it("Should only ship owner can report fuel supply", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
 
+      await expect(
+        shipTimeChartering
+          .connect(charterer)
+          .oilSupplyReport(
+            startDateTime, //date  of supply
+            250 //quantity of oil supplied, in tons
+          )
+      ).to.be.revertedWith("Only ship owner can report oil supply");
     })
 
     it("Should emit a fuel supply event", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      await shipTimeChartering.connect(shipOwner).oilSupplyReport(
+        startDateTime, //date  of supply
+        250 //quantity of oil supplied, in tons
+      )
 
+      const filter = shipTimeChartering.filters.SupplyReport();
+      const events = await shipTimeChartering.queryFilter(filter);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.day).to.equal(startDateTime);
+      expect(events[0].args.oilTonsQuantity).to.equal(250);
     })
   })
 

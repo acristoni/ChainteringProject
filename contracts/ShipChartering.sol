@@ -99,7 +99,8 @@ contract ShipTimeCharteringGeneric is Initializable {
     event BelowContractualSpeed( uint256 avarageSpeed, uint8 minimumCruisingSpeed);
     event ConsumptionAboveAgreed( uint8 consuptionAgreed, uint256 consuptionReported);
     event ReportOperation(uint256 dateArrival, bool isBadWeather, OperationStatus operationCode);
-    
+    event SupplyReport(uint256 day, uint16 oilTonsQuantity);
+
     constructor(
         address payable _shipOwner,
         address payable _charterer,
@@ -250,6 +251,17 @@ contract ShipTimeCharteringGeneric is Initializable {
             returnCheckOil.isConsuptionAccordingContract = true;
             return returnCheckOil;
         }
+    }
+
+    function oilSupplyReport(uint256 day, uint16 oilTonsQuantity) external {
+        require(msg.sender == parties.shipOwner, "Only ship owner can report oil supply");
+        oilSupply[day] = oilTonsQuantity;
+
+        emit SupplyReport(day, oilTonsQuantity);
+    }
+
+    function consultOilSupplyReport(uint256 day) view external returns (uint16 oilTonsQuantity) {
+        return oilSupply[day];
     }
 
     function getOperationReport(uint256 date) external view returns (VesselReport memory vesselReport) {
