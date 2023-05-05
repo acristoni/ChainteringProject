@@ -98,6 +98,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     event CharterClosed(address indexed shipOwner, address indexed charterer);
     event BelowContractualSpeed( uint256 avarageSpeed, uint8 minimumCruisingSpeed);
     event ConsumptionAboveAgreed( uint8 consuptionAgreed, uint256 consuptionReported);
+    event ReportOperation(uint256 dateArrival, bool isBadWeather, OperationStatus operationCode);
     
     constructor(
         address payable _shipOwner,
@@ -210,6 +211,8 @@ contract ShipTimeCharteringGeneric is Initializable {
         }
 
         contractValues.amountDueShipOwner += contractValues.charterPerHour * operationHoursDuration;
+
+        emit ReportOperation(dateArrival, isBadWeather, operationCode);
     }
 
     function avarageSpeed( uint256 operationHoursDuration, uint256 distance ) pure public returns (uint256 _avaraSpeed) {
@@ -299,5 +302,10 @@ contract ShipTimeCharteringGeneric is Initializable {
         }
         
         emit CharterClosed(parties.shipOwner, parties.charterer);
+    }
+
+    function transferChainteringService(address payable newOwner) public {
+        require(msg.sender == parties.chainteringService, "Only the current Chaintering owner can do this action");
+        parties.chainteringService = newOwner;
     }
 }

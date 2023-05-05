@@ -9,15 +9,11 @@ describe("ShipTimeCharteringGeneric", () => {
   let arbiter_2;
   let arbiter_3;
   let chainteringService;
-
-  function degreesToRadians(degrees) {
-    var radians = degrees * Math.PI/180;
-    return radians;
-  }
+  let newChainteringOwner;
 
   beforeEach(async () => {
     // Deploy the contract before each test
-    [shipOwner, charterer, arbiter_1, arbiter_2, arbiter_3, chainteringService] = await ethers.getSigners();
+    [shipOwner, charterer, arbiter_1, arbiter_2, arbiter_3, chainteringService, newChainteringOwner] = await ethers.getSigners();
     const ShipTimeChartering = await ethers.getContractFactory("ShipTimeCharteringGeneric");
     shipTimeChartering = await ShipTimeChartering.deploy(
       shipOwner.address,
@@ -312,6 +308,41 @@ describe("ShipTimeCharteringGeneric", () => {
         expect(reportDataSaved.operationStatus).to.equal(2);
     })
 
+    it("Should emit Operation Report event", async() => {
+      //write new ship operation report
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
+      const latitudeDeparture = -23.90320425631785;
+      const longitudeDerparture = -46.07624389163475;
+      const latitudeArrival = -25.248573511757215;
+      const longitudeArrival = -44.76222770000078; //about 120 nautical miles
+
+      await shipTimeChartering
+        .connect(shipOwner)
+        .newOperationReport(
+          dateDeparture,
+          dateArrival,
+          ethers.utils.parseUnits(String(latitudeDeparture), 18),
+          ethers.utils.parseUnits(String(longitudeDerparture), 18),
+          ethers.utils.parseUnits(String(latitudeArrival), 18),
+          ethers.utils.parseUnits(String(longitudeArrival), 18),
+          120, //distance in nautical miles
+          false, // is good Weather, 
+          200, // oil consuption per operation, 
+          2 // operation code for under way
+        );
+
+      // Check the emitted event
+      const filter = shipTimeChartering.filters.ReportOperation();
+      const events = await shipTimeChartering.queryFilter(filter);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.dateArrival).to.equal(dateArrival);
+      expect(events[0].args.isBadWeather).to.equal(false);
+      expect(events[0].args.operationCode).to.equal(2);
+    })
+
     it("Should sum oil consuption during operation to total oil consuption in contract storage", async() => {
       //write new ship operation report
       const contractTimes = await shipTimeChartering.contractTimes();
@@ -461,7 +492,7 @@ describe("ShipTimeCharteringGeneric", () => {
 
     // })
 
-    it("Should emit event consumption above agreed, if oil consume exceed the agreed", async() => {
+    it("Should emit event consumption above agreed", async() => {
       //write new ship operation report
       const contractTimes = await shipTimeChartering.contractTimes();
       const startDateTime = parseInt(contractTimes[0]);
@@ -566,11 +597,22 @@ describe("ShipTimeCharteringGeneric", () => {
 
   describe("Change service owner", async () => {
     it("Should Chaintering service can be changed", async() => { 
+      await shipTimeChartering
+        .connect(chainteringService)
+        .transferChainteringService(newChainteringOwner.address);
 
+        const parties = await shipTimeChartering.parties();
+        const chainteringServiceFromGetter = parties[5];
+
+        expect(chainteringServiceFromGetter).to.equal(newChainteringOwner.address);
     })
 
     it("Should only actual owner change to new owner", async() => {
-
+      await expect(
+        shipTimeChartering
+          .connect(newChainteringOwner)
+          .transferChainteringService(newChainteringOwner.address)
+      ).to.be.revertedWith("Only the current Chaintering owner can do this action");
     })
   })
 
