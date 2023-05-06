@@ -42,12 +42,12 @@ contract ShipTimeCharteringGeneric is Initializable {
         mapping(address => bool) votes;
         bool isClose;
         uint32 value;
-        DisputeParties partyOpenDispute;
-        DisputeParties winningParty;
+        DisputeParties partOpenDispute;
+        DisputeParties winningPart;
     }
     struct Location {
-        int256 latitude; // degrees * 10^7
-        int256 longitude; // degrees * 10^7
+        int256 latitude; // degrees
+        int256 longitude; // degrees
     }
     enum OperationStatus {
         standBy,
@@ -100,7 +100,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     event ReportOperation(uint256 dateArrival, bool isBadWeather, OperationStatus operationCode);
     event SupplyReport(uint256 day, uint16 oilTonsQuantity);
     event ArbiterVote(uint16 disputeId, bool isReasonable, address arbiter);
-    event ResJudicata(uint16 disputeId, DisputeParties winningParty);
+    event ResJudicata(uint16 disputeId, DisputeParties winningPart);
     event AddDueAmount(uint256 amount, uint256 currentContractMonth);
     event SubtractDueAmount(uint256 amount, uint256 currentContractMonth);
     event NotEnoughFounds(uint256 value, uint256 currentContractMonth);
@@ -254,7 +254,6 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
 
     function checkMinimumOperationalSpeed( uint256 operationHoursDuration, uint256 distance ) view public returns (ReturnCheckSpeed memory) {
-        
         uint256 _avarageSpeed = avarageSpeed( operationHoursDuration, distance );
         ReturnCheckSpeed memory returnFunction;
         returnFunction.speed = _avarageSpeed;
@@ -269,7 +268,6 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
 
     function checkOilConsuption( uint256 operationHoursDuration, uint256 oilConsuption, OperationStatus operationCode ) view public returns (ReturnCheckOil memory) {
-        
         ReturnCheckOil memory returnCheckOil;
         uint256 oilConsuptionDuringOperation = oilConsuption.div(operationHoursDuration);
         returnCheckOil.oilConsuptionDuringOperation = oilConsuptionDuringOperation;
@@ -321,7 +319,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint256 endTime,
         string calldata reason,
         uint32 value,
-        DisputeParties partyOpenDispute ) public {
+        DisputeParties partOpenDispute ) public {
         
         ++totalDisputes;
 
@@ -329,8 +327,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         allDisputes[totalDisputes].endTime = endTime;
         allDisputes[totalDisputes].reason = reason;
         allDisputes[totalDisputes].value = value;
-        allDisputes[totalDisputes].partyOpenDispute = partyOpenDispute;
-
+        allDisputes[totalDisputes].partOpenDispute = partOpenDispute;
     }
 
     function judgeDispute(uint16 disputeId, bool isReasonable) external {
@@ -352,7 +349,6 @@ contract ShipTimeCharteringGeneric is Initializable {
         }
 
         emit ArbiterVote(disputeId, isReasonable, msg.sender);
-
         closeDispute(disputeId);
     }
 
@@ -373,23 +369,23 @@ contract ShipTimeCharteringGeneric is Initializable {
             }
 
             if (isReasonableVote > isNotReasonableVote) {
-                allDisputes[disputeId].winningParty = allDisputes[disputeId].partyOpenDispute;
+                allDisputes[disputeId].winningPart = allDisputes[disputeId].partOpenDispute;
             } else
-            if (allDisputes[disputeId].partyOpenDispute == DisputeParties.shipOwner) {
-                allDisputes[disputeId].winningParty = DisputeParties.charterer;
+            if (allDisputes[disputeId].partOpenDispute == DisputeParties.shipOwner) {
+                allDisputes[disputeId].winningPart = DisputeParties.charterer;
             } else
-            if (allDisputes[disputeId].partyOpenDispute == DisputeParties.charterer) {
-                allDisputes[disputeId].winningParty = DisputeParties.shipOwner;
+            if (allDisputes[disputeId].partOpenDispute == DisputeParties.charterer) {
+                allDisputes[disputeId].winningPart = DisputeParties.shipOwner;
             }
 
             allDisputes[disputeId].isClose = true;
 
-            emit ResJudicata(disputeId, allDisputes[disputeId].winningParty);
+            emit ResJudicata(disputeId, allDisputes[disputeId].winningPart);
             
-            if ( allDisputes[disputeId].winningParty == DisputeParties.shipOwner ) {
+            if ( allDisputes[disputeId].winningPart == DisputeParties.shipOwner ) {
                 addDueAmount(allDisputes[disputeId].value);
             }
-            if ( allDisputes[disputeId].winningParty == DisputeParties.charterer ) {
+            if ( allDisputes[disputeId].winningPart == DisputeParties.charterer ) {
                 subtractDueAmount(allDisputes[disputeId].value);   
             }
         } 

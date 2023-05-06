@@ -119,7 +119,7 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events[0].args.end).to.equal(endDateTime);
     });
 
-    it("Shouldn't start if other than carterer party try to start contract", async() => {
+    it("Shouldn't start if other than carterer part try to start contract", async() => {
       await expect(
         shipTimeChartering.connect(shipOwner).startCharter(3)
       ).to.be.revertedWith("Only charterer can start the charter ship");
@@ -232,7 +232,7 @@ describe("ShipTimeCharteringGeneric", () => {
     })
 
     it("Should discount from amount due the diference between oil supply and oil consuption, if it's positive", async() => {
-
+      //passr valor do oleo como parametro
     })
   })
 
@@ -432,7 +432,7 @@ describe("ShipTimeCharteringGeneric", () => {
       const events = await shipTimeChartering.queryFilter(filter);
       expect(events.length).to.equal(1);
       expect(events[0].args.disputeId).to.equal(1);
-      expect(events[0].args.winningParty).to.equal(1);
+      expect(events[0].args.winningPart).to.equal(1);
     })
 
     it("Should increase dispute value on amount due, if ship owner wins", async() => {
@@ -817,7 +817,6 @@ describe("ShipTimeCharteringGeneric", () => {
   describe("Payment charter", async() => {
     it("Should be able to check current contract month", async() => {
       const currentMonth = await shipTimeChartering.checkCurrentContractMonth()
-
       expect(currentMonth).to.equal(0)
     })
 
