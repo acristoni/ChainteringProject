@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "prb-math/contracts/PRBMathSD59x18.sol"; 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "hardhat/console.sol";
 
 contract ShipTimeCharteringGeneric is Initializable {
     using SafeMath for uint256;
-    using PRBMathSD59x18 for int256;
 
     Parties public parties;
     ContractTimes public contractTimes;
