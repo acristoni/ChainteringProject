@@ -14,13 +14,13 @@ contract ShipTimeCharteringGeneric is Initializable {
     ContractValues public contractValues;
     
     //chater data
-    mapping(uint256 charterMonth => uint256 amountDue) public monthlyAmontDue;
-    mapping(uint16 disputeId => Dispute) public allDisputes;
+    mapping(uint256 => uint256) public monthlyAmontDue;
+    mapping(uint16 => Dispute) public allDisputes;
     uint16 public totalDisputes = 0;
 
     // //ShipOwnerReport
-    mapping(uint256 day => uint16 oilTonsQuantity) public oilSupply;
-    mapping(uint256 date => VesselReport vesselReport) public vesselOpsReport;
+    mapping(uint256 => uint16) public oilSupply;
+    mapping(uint256 => VesselReport) public vesselOpsReport;
     
     //contract types
     struct ContractValues {

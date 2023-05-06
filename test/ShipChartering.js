@@ -519,6 +519,14 @@ describe("ShipTimeCharteringGeneric", () => {
       const amountDueAfter = await shipTimeChartering.checkMonthlyAmountDue(0);
       expect(amountDueAfter).to.equal(8000)
     })
+
+    ("It should close a dispute open by ship owner and it's not reasonable", async() => {
+
+    })
+
+    ("It should close a dispute open by charterer and it's not reasonable", async() => {
+
+    })
   })
 
   describe("Report vessel operations by ship owner", async() => {
