@@ -27,7 +27,6 @@ describe("ShipTimeCharteringGeneric", () => {
 
     //function call after deploy to finish the contract variable set up, due the 'Stack too deep' it can't be done in constructor.
     await shipTimeChartering.setUpContract(
-      5, // monthlyPayday
       1000, // charterPerHour
       75, // chainteringServicePayPerHour
       12, // minimumCruisingSpeed
@@ -61,10 +60,7 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(chainteringServiceFromGetter).to.equal(chainteringService.address);
     });
   
-    it("Should set contract variables on setUp function correctly", async () => {
-      const contractTimes = await shipTimeChartering.contractTimes();
-      const monthlyPayday = parseInt(contractTimes[2]);
-  
+    it("Should set contract variables on setUp function correctly", async () => {  
       const contractValues = await shipTimeChartering.contractValues();
       const charterPerHour = contractValues[0];
       const chainteringServicePayPerHour = contractValues[1];
@@ -74,7 +70,6 @@ describe("ShipTimeCharteringGeneric", () => {
       const vesselIMOnumber = vesselData[0];
       const minimumCruisingSpeed = vesselData[1];
   
-      expect(monthlyPayday).to.equal(5);
       expect(charterPerHour).to.equal(1000);
       expect(chainteringServicePayPerHour).to.equal(75);
       expect(earlyCancellationPenaltyPerHour).to.equal(1);
@@ -252,7 +247,7 @@ describe("ShipTimeCharteringGeneric", () => {
         endTime,
         "Not bad weather, as reported", //reason
         10000, //value
-        1 // charterer is open this dispute
+        1 // charterer open this dispute
       );
 
       const isSomeOpenDispute = await shipTimeChartering.checkOpenDispute()
@@ -275,7 +270,7 @@ describe("ShipTimeCharteringGeneric", () => {
         startTime + (10 * 3600), //10 hours voyage
         "Not bad weather, as reported", //reason
         10000, //value
-        1 // charterer is open this dispute
+        1 // charterer open this dispute
       );
 
       //second open dispute
@@ -284,7 +279,7 @@ describe("ShipTimeCharteringGeneric", () => {
         startTime + (4 * 3600), //2 hours voyage
         "Is bad weather, despiting oracle data", //reason
         2000, //value
-        0 // ship owner is open this dispute
+        0 // ship owner open this dispute
       );
 
       //third open dispute
@@ -293,7 +288,7 @@ describe("ShipTimeCharteringGeneric", () => {
         startTime + (12 * 3600), //8 hours voyage
         "Not off hire, crew member sick", //reason
         8000, //value
-        0 // ship owner is open this dispute
+        0 // ship owner open this dispute
       );
 
       const totalDisputes = await shipTimeChartering.totalDisputes();
@@ -301,7 +296,7 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(totalDisputes).to.equal(3);
     })
 
-    it("Should dispute be judge by three arbiters", async() => {
+    it("Should only contract arbiter can judge", async() => {
       const contractTimes = await shipTimeChartering.contractTimes();
       const startTime = parseInt(contractTimes[0]);
 
@@ -311,21 +306,7 @@ describe("ShipTimeCharteringGeneric", () => {
         startTime + (10 * 3600), //10 hours voyage
         "Not bad weather, as reported", //reason
         10000, //value
-        1 // charterer is open this dispute
-      );
-    })
-
-    it("Should only contract arbiter judge", async() => {
-      const contractTimes = await shipTimeChartering.contractTimes();
-      const startTime = parseInt(contractTimes[0]);
-
-      //first open dispute
-      await shipTimeChartering.createDispute(
-        startTime,
-        startTime + (10 * 3600), //10 hours voyage
-        "Not bad weather, as reported", //reason
-        10000, //value
-        1 // charterer is open this dispute
+        1 // charterer open this dispute
       );
 
       await expect(
@@ -348,7 +329,7 @@ describe("ShipTimeCharteringGeneric", () => {
         startTime + (10 * 3600), //10 hours voyage
         "Not bad weather, as reported", //reason
         10000, //value
-        1 // charterer is open this dispute
+        1 // charterer open this dispute
       );
 
       //judge dispute
@@ -378,7 +359,7 @@ describe("ShipTimeCharteringGeneric", () => {
         startTime + (10 * 3600), //10 hours voyage
         "Not bad weather, as reported", //reason
         10000, //value
-        1 // charterer is open this dispute
+        1 // charterer open this dispute
       );
 
       //first vote
@@ -419,7 +400,7 @@ describe("ShipTimeCharteringGeneric", () => {
         startTime + (10 * 3600), //10 hours voyage
         "Not bad weather, as reported", //reason
         10000, //value
-        1 // charterer is open this dispute
+        1 // charterer open this dispute
       );
 
       //first vote
@@ -454,14 +435,90 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events[0].args.winningParty).to.equal(1);
     })
 
-    it("Should increase dispute value on amount due, if charterer wins", async() => {
+    it("Should increase dispute value on amount due, if ship owner wins", async() => {
+      const amountDueBefore = await shipTimeChartering.checkMonthlyAmountDue(0);
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startTime = parseInt(contractTimes[0]);
 
-    })
+      //first open dispute
+      await shipTimeChartering.createDispute(
+        startTime,
+        startTime + (10 * 3600), //10 hours voyage
+        "Not off hire, crew member sick", //reason
+        10000, //value
+        0 // ship owner open this dispute
+      );
 
-    it("Should decrease dispute value on amount due, if ship owner wins", async() => {
+      //first vote
+      await shipTimeChartering
+              .connect(arbiter_1)
+              .judgeDispute(
+                1, //dispute id
+                true //is reasonable
+              )
+
+      //second vote
+      await shipTimeChartering
+              .connect(arbiter_2)
+              .judgeDispute(
+                1, //dispute id
+                true //is reasonable
+              )
+
+      //third vote
+      await shipTimeChartering
+            .connect(arbiter_3)
+            .judgeDispute(
+              1, //dispute id
+              true //is reasonable
+            )
       
+      const amountDueAfter = await shipTimeChartering.checkMonthlyAmountDue(0);
+      expect(amountDueAfter - amountDueBefore).to.equal(10000)
     })
 
+    it("Should decrease dispute value on amount due, if charterer wins", async() => {
+      await shipTimeChartering.addDueAmount(10000);
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startTime = parseInt(contractTimes[0]);
+
+      
+      //first open dispute
+      await shipTimeChartering.createDispute(
+        startTime,
+        startTime + (10 * 3600), //10 hours voyage
+        "Not bad weather, as reported", //reason
+        2000, //value
+        1 // charterer open this dispute
+      );
+
+      //first vote
+      await shipTimeChartering
+              .connect(arbiter_1)
+              .judgeDispute(
+                1, //dispute id
+                true //is reasonable
+              )
+
+      //second vote
+      await shipTimeChartering
+              .connect(arbiter_2)
+              .judgeDispute(
+                1, //dispute id
+                true //is reasonable
+              )
+
+      //third vote
+      await shipTimeChartering
+            .connect(arbiter_3)
+            .judgeDispute(
+              1, //dispute id
+              true //is reasonable
+            )
+      
+      const amountDueAfter = await shipTimeChartering.checkMonthlyAmountDue(0);
+      expect(amountDueAfter).to.equal(8000)
+    })
   })
 
   describe("Report vessel operations by ship owner", async() => {
@@ -684,9 +741,9 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(response.oilConsuptionDuringOperation).to.equal(20);
     })
 
-    // it("Should calculate penalty, if speed not reached", async() => {
+    it("Should calculate penalty, if speed not reached", async() => {
 
-    // })
+    })
 
     it("Should emit event consumption above agreed", async() => {
       //write new ship operation report
@@ -733,8 +790,7 @@ describe("ShipTimeCharteringGeneric", () => {
       const latitudeArrival = -25.248573511757215;
       const longitudeArrival = -44.76222770000078; //about 120 nautical miles
       
-      const contractValuesBeforeOperation = await shipTimeChartering.contractValues()
-      const amountDueBeforeOperation = contractValuesBeforeOperation[3]
+      const amountDueBefore = await shipTimeChartering.checkMonthlyAmountDue(0);
 
       await shipTimeChartering
         .connect(shipOwner)
@@ -751,15 +807,86 @@ describe("ShipTimeCharteringGeneric", () => {
           2 // operation code for under way
         );
 
-        const contractValuesAfterOperation = await shipTimeChartering.contractValues()
-        const amountDueAfterOperation = contractValuesAfterOperation[3]
+      const amountDueAfter = await shipTimeChartering.checkMonthlyAmountDue(0);
 
-      expect(amountDueAfterOperation - amountDueBeforeOperation).to.equal(10000)
+      expect(amountDueAfter - amountDueBefore).to.equal(10000)
     })
 
   })
   
-  describe("Pay charter", async() => {
+  describe("Payment charter", async() => {
+    it("Should be able to check current contract month", async() => {
+      const currentMonth = await shipTimeChartering.checkCurrentContractMonth()
+
+      expect(currentMonth).to.equal(0)
+    })
+
+    it("Should be able to check current contract month, mocking anothers months", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const firstMonthTime = parseInt(contractTimes[0]) + 45 * 24 * 60 * 60 * 1000 ;
+      await ethers.provider.send("evm_mine", [firstMonthTime]);
+      const firstMonth = await shipTimeChartering.checkCurrentContractMonth()
+
+      expect(firstMonth).to.equal(1)
+
+      const secondMonthTime = parseInt(contractTimes[0]) + 60 * 24 * 60 * 61 * 1000 ;
+      await ethers.provider.send("evm_mine", [secondMonthTime]);
+      const secondMonth = await shipTimeChartering.checkCurrentContractMonth()
+
+      expect(secondMonth).to.equal(2)
+    })
+
+    it("Should be able to add some amount due", async() => {
+      const amountDueBefore = await shipTimeChartering.checkMonthlyAmountDue(0);
+      await shipTimeChartering.addDueAmount(10000);
+      const amountDueAfter = await shipTimeChartering.checkMonthlyAmountDue(0);
+      const amountDiference = amountDueAfter - amountDueBefore;
+      expect(amountDiference).to.equal(10000);
+    })
+
+    it("Should be emit AddDueAmount event", async() => {
+      await shipTimeChartering.addDueAmount(10000);
+
+      // Check the emitted event
+      const filter = shipTimeChartering.filters.AddDueAmount();
+      const events = await shipTimeChartering.queryFilter(filter);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.amount).to.equal(10000);
+      expect(events[0].args.currentContractMonth).to.equal(0);
+    })
+
+    it("Should be able to subtract some amount due", async() => {
+      const amountDueBefore = await shipTimeChartering.checkMonthlyAmountDue(0);
+      await shipTimeChartering.addDueAmount(10000);
+      await shipTimeChartering.subtractDueAmount(1000);
+      const amountDueAfter = await shipTimeChartering.checkMonthlyAmountDue(0);
+      const amountDiference = amountDueAfter - amountDueBefore;
+      expect(amountDiference).to.equal(9000);
+    })
+
+    it("Should be emit SubtractDueAmount event", async() => {
+      await shipTimeChartering.addDueAmount(10000);
+      await shipTimeChartering.subtractDueAmount(2000);
+
+      // Check the emitted event
+      const filter = shipTimeChartering.filters.SubtractDueAmount();
+      const events = await shipTimeChartering.queryFilter(filter);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.amount).to.equal(2000);
+      expect(events[0].args.currentContractMonth).to.equal(0);
+    })
+
+    it("Should emit NotEnoughFounds event if amount due this month is less then value subtraction", async() => {
+      await shipTimeChartering.subtractDueAmount(1000);
+
+      // Check the emitted event
+      const filter = shipTimeChartering.filters.NotEnoughFounds();
+      const events = await shipTimeChartering.queryFilter(filter);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.value).to.equal(1000);
+      expect(events[0].args.currentContractMonth).to.equal(0);
+    })
+
     it("Should pay ship owner all amount due in pay day", async() => {
 
     })

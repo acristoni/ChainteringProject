@@ -16,6 +16,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     ContractValues public contractValues;
     
     //chater data
+    mapping(uint256 charterMonth => uint256 amountDue) public monthlyAmontDue;
     mapping(uint16 disputeId => Dispute) public allDisputes;
     uint16 public totalDisputes = 0;
 
@@ -27,8 +28,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     struct ContractValues {
         uint32 charterPerHour;
         uint8 chainteringServicePayPerHour;
-        uint256 earlyCancellationPenaltyPerHour;
-        uint256 amountDueShipOwner;
+        uint256 penaltyPerHour;
     }
     struct VesselData {
         uint32 vesselIMOnumber; 
@@ -75,7 +75,6 @@ contract ShipTimeCharteringGeneric is Initializable {
     struct ContractTimes {
         uint256 startDateTime;
         uint256 endDateTime;
-        uint256 monthlyPayday;
     }
     struct VesselReport {
         uint256 startDate;
@@ -104,6 +103,9 @@ contract ShipTimeCharteringGeneric is Initializable {
     event SupplyReport(uint256 day, uint16 oilTonsQuantity);
     event ArbiterVote(uint16 disputeId, bool isReasonable, address arbiter);
     event ResJudicata(uint16 disputeId, DisputeParties winningParty);
+    event AddDueAmount(uint256 amount, uint256 currentContractMonth);
+    event SubtractDueAmount(uint256 amount, uint256 currentContractMonth);
+    event NotEnoughFounds(uint256 value, uint256 currentContractMonth);
 
     constructor(
         address payable _shipOwner,
@@ -122,20 +124,18 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
 
     function setUpContract(
-        uint256 _monthlyPayday,
         uint32 _charterPerHour, 
         uint8 _chainteringServicePayPerHour,
         uint8 _minimumCruisingSpeed,
         uint32 _vesselIMOnumber,
-        uint256 _earlyCancellationPenaltyPerHour,
+        uint256 _penaltyPerHour,
         uint8 _consuptionstandBy,
         uint8 _consuptionAtOperation,
         uint8 _consuptionUnderWay
     ) external {
-        contractTimes.monthlyPayday = _monthlyPayday;
         contractValues.charterPerHour = _charterPerHour;
         contractValues.chainteringServicePayPerHour = _chainteringServicePayPerHour;
-        contractValues.earlyCancellationPenaltyPerHour = _earlyCancellationPenaltyPerHour;    
+        contractValues.penaltyPerHour = _penaltyPerHour;    
         vesselData.minimumCruisingSpeed = _minimumCruisingSpeed;
         vesselData.vesselIMOnumber = _vesselIMOnumber;
         vesselData.oilConsumptionTonsHour[OperationStatus.standBy] = _consuptionstandBy;
@@ -215,9 +215,39 @@ contract ShipTimeCharteringGeneric is Initializable {
             );
         }
 
-        contractValues.amountDueShipOwner += contractValues.charterPerHour * operationHoursDuration;
+        uint256 amountDueOperation = contractValues.charterPerHour * operationHoursDuration;
+        addDueAmount(amountDueOperation);
 
-        emit ReportOperation(dateArrival, isBadWeather, operationCode);
+        // emit ReportOperation(dateArrival, isBadWeather, operationCode);
+    }
+
+    function addDueAmount(uint256 amount) public {
+        uint256 currentContractMonth = checkCurrentContractMonth();
+        monthlyAmontDue[currentContractMonth] += amount;
+
+        emit AddDueAmount(amount, currentContractMonth);
+    }
+
+    function subtractDueAmount(uint256 amount) public {
+        uint256 currentContractMonth = checkCurrentContractMonth();
+        uint256 currentMonthlyAmountDue = checkMonthlyAmountDue(currentContractMonth);
+
+        if (amount > currentMonthlyAmountDue) {
+            emit NotEnoughFounds(amount, currentContractMonth);
+        } else {
+            monthlyAmontDue[currentContractMonth] -= amount;
+            emit SubtractDueAmount(amount, currentContractMonth);
+        }
+    }
+
+    function checkCurrentContractMonth() view public returns (uint256 currentContractMonth) {
+        uint256 diferenceBetweenNowAndStartContractDate = block.timestamp - contractTimes.startDateTime;
+        uint256 contractMonth = diferenceBetweenNowAndStartContractDate.div(30 * 24 * 60 * 60 * 1000); 
+        return contractMonth;
+    }
+
+    function checkMonthlyAmountDue(uint256 month) view public returns(uint256 _monthlyAmontDue) {
+        return monthlyAmontDue[month];
     }
 
     function avarageSpeed( uint256 operationHoursDuration, uint256 distance ) pure public returns (uint256 _avaraSpeed) {
@@ -276,7 +306,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         if (block.timestamp < contractTimes.endDateTime) {
             uint256 diferenceBetweenDatesInHours = (contractTimes.endDateTime - block.timestamp) / 3600;
             uint256 amountDueShipOwner = 
-                contractValues.earlyCancellationPenaltyPerHour * diferenceBetweenDatesInHours;
+                contractValues.penaltyPerHour * diferenceBetweenDatesInHours;
 
             return amountDueShipOwner;
         } else {
@@ -335,22 +365,13 @@ contract ShipTimeCharteringGeneric is Initializable {
             uint8 isReasonableVote;
             uint8 isNotReasonableVote;
 
-            if (allDisputes[disputeId].votes[parties.arbiter_1]) {
-                isReasonableVote++;
-            } else {
-                isNotReasonableVote--;
-            }
-
-            if (allDisputes[disputeId].votes[parties.arbiter_2]) {
-                isReasonableVote++;
-            } else {
-                isNotReasonableVote--;
-            }
-
-            if (allDisputes[disputeId].votes[parties.arbiter_3]) {
-                isReasonableVote++;
-            } else {
-                isNotReasonableVote--;
+            for (uint8 i = 0; i < allDisputes[disputeId].arbitersVoted.length; i++) {
+                address arbiter = allDisputes[disputeId].arbitersVoted[i];
+                if (allDisputes[disputeId].votes[arbiter]) {
+                    isReasonableVote++;
+                } else {
+                    isNotReasonableVote--;
+                }
             }
 
             if (isReasonableVote > isNotReasonableVote) {
@@ -366,7 +387,13 @@ contract ShipTimeCharteringGeneric is Initializable {
             allDisputes[disputeId].isClose = true;
 
             emit ResJudicata(disputeId, allDisputes[disputeId].winningParty);
-            //mexer no amount due
+            
+            if ( allDisputes[disputeId].winningParty == DisputeParties.shipOwner ) {
+                addDueAmount(allDisputes[disputeId].value);
+            }
+            if ( allDisputes[disputeId].winningParty == DisputeParties.charterer ) {
+                subtractDueAmount(allDisputes[disputeId].value);   
+            }
         } 
     }
 
