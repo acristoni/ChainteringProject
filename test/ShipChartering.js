@@ -894,6 +894,10 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events[0].args.currentContractMonth).to.equal(0);
     })
 
+    it("Should update pay rate by oil inflaction", async() => {
+      
+    })
+
     it("Should pay ship owner all amount due in pay day", async() => {
 
     })
@@ -977,6 +981,10 @@ describe("ShipTimeCharteringGeneric", () => {
   })
 
   describe("Oracle service", async() => {
+    it("Should get oil inflaction monthly", async() => {
+
+    })
+
     it("Should convert ether to dolar", async() => {
 
     })
