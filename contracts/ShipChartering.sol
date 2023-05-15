@@ -4,12 +4,16 @@ pragma solidity ^0.8.9;
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "./Haversine.sol";
 import "hardhat/console.sol";
 
 contract ShipTimeCharteringGeneric is Initializable {
     using SafeMath for uint256;
     AggregatorV3Interface internal priceFeed;
     int public priceMatic;
+
+    Haversine public contractHaversine;
+    int public lastDistanceCalculation;
 
     Parties public parties;
     ContractTimes public contractTimes;
@@ -96,7 +100,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint256 oilConsuptionDuringOperation;    
     }   
     
-    event   CharterStarted(address indexed shipOwner, address indexed charterer, uint256 price, uint256 start, uint256 end);
+    event CharterStarted(address indexed shipOwner, address indexed charterer, uint256 price, uint256 start, uint256 end);
     event CharterClosed(address indexed shipOwner, address indexed charterer);
     event BelowContractualSpeed( uint256 avarageSpeed, uint8 minimumCruisingSpeed);
     event ConsumptionAboveAgreed( uint8 consuptionAgreed, uint256 consuptionReported);
@@ -108,6 +112,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     event SubtractDueAmount(uint256 amount, uint256 currentContractMonth);
     event NotEnoughFounds(uint256 value, uint256 currentContractMonth);
     event MaticPrice(int priceMatic);
+    event HaversineDistance(int haversineDistance);
 
     constructor(
         address payable _shipOwner,
@@ -115,7 +120,8 @@ contract ShipTimeCharteringGeneric is Initializable {
         address payable _arbiter_1,
         address payable _arbiter_2,
         address payable _arbiter_3,
-        address payable _chainteringService
+        address payable _chainteringService,
+        address contractHaversineAddress
     ) {
         parties.shipOwner = _shipOwner;
         parties.charterer = _charterer;
@@ -126,6 +132,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         priceFeed = AggregatorV3Interface(
             0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada
         );
+        contractHaversine = Haversine(contractHaversineAddress);
     }
 
     function setUpContract(
@@ -449,5 +456,17 @@ contract ShipTimeCharteringGeneric is Initializable {
     function saveLastMaticPrice() public {
         priceMatic = getLatestMaticPrice();
         emit MaticPrice(priceMatic);
+    }
+
+    function requestHaversineDistance( 
+        string calldata lat1, 
+        string calldata lon1, 
+        string calldata lat2, 
+        string calldata lon2 ) public {
+        contractHaversine.requestHaversineDistance( lat1, lon1, lat2, lon2 );
+    }
+
+    function saveHaversineDistance(int _distance) public {
+        lastDistanceCalculation = _distance;
     }
 }
