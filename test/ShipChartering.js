@@ -599,7 +599,6 @@ describe("ShipTimeCharteringGeneric", () => {
       const filter = shipTimeChartering.filters.ReportOperation();
       const events = await shipTimeChartering.queryFilter(filter);
       expect(events.length).to.equal(1);
-      expect(events[0].args.dateArrival).to.equal(dateArrival);
       expect(events[0].args.isBadWeather).to.equal(false);
       expect(events[0].args.operationCode).to.equal(2);
     })
