@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "hardhat/console.sol";
 
 contract ShipTimeCharteringGeneric is Initializable {
     using SafeMath for uint256;
+    AggregatorV3Interface internal priceFeed;
+    int public priceEth;
 
     Parties public parties;
     ContractTimes public contractTimes;
@@ -104,6 +107,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     event AddDueAmount(uint256 amount, uint256 currentContractMonth);
     event SubtractDueAmount(uint256 amount, uint256 currentContractMonth);
     event NotEnoughFounds(uint256 value, uint256 currentContractMonth);
+    event EthPrice(int priceEth);
 
     constructor(
         address payable _shipOwner,
@@ -119,6 +123,9 @@ contract ShipTimeCharteringGeneric is Initializable {
         parties.arbiter_2 = _arbiter_2;
         parties.arbiter_3 = _arbiter_3;
         parties.chainteringService = _chainteringService;
+        priceFeed = AggregatorV3Interface(
+            0x0715A7794a1dc8e42615F059dD6e406A6594651A
+        );
     }
 
     function setUpContract(
@@ -424,5 +431,23 @@ contract ShipTimeCharteringGeneric is Initializable {
     function transferChainteringService(address payable newOwner) public {
         require(msg.sender == parties.chainteringService, "Only the current Chaintering owner can do this action");
         parties.chainteringService = newOwner;
+    }
+
+
+    function getLatestEthPrice() public view returns (int) {
+        // prettier-ignore
+        (
+            /* uint80 roundID */,
+            int price,
+            /*uint startedAt*/,
+            /*uint timeStamp*/,
+            /*uint80 answeredInRound*/
+        ) = priceFeed.latestRoundData();
+        return price;
+    }
+
+    function saveLastEthPrice() public {
+        priceEth = getLatestEthPrice();
+        emit EthPrice(priceEth);
     }
 }
