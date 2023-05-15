@@ -93,11 +93,11 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint256 oilConsuptionDuringOperation;    
     }   
     
-    event CharterStarted(address indexed shipOwner, address indexed charterer, uint256 price, uint256 start, uint256 end);
+    event   CharterStarted(address indexed shipOwner, address indexed charterer, uint256 price, uint256 start, uint256 end);
     event CharterClosed(address indexed shipOwner, address indexed charterer);
     event BelowContractualSpeed( uint256 avarageSpeed, uint8 minimumCruisingSpeed);
     event ConsumptionAboveAgreed( uint8 consuptionAgreed, uint256 consuptionReported);
-    event ReportOperation(uint256 dateArrival, bool isBadWeather, OperationStatus operationCode);
+    event ReportOperation(bool isBadWeather, OperationStatus operationCode);
     event SupplyReport(uint256 day, uint16 oilTonsQuantity);
     event ArbiterVote(uint16 disputeId, bool isReasonable, address arbiter);
     event ResJudicata(uint16 disputeId, DisputeParties winningPart);
@@ -216,7 +216,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint256 amountDueOperation = contractValues.charterPerHour * operationHoursDuration;
         addDueAmount(amountDueOperation);
 
-        // emit ReportOperation(dateArrival, isBadWeather, operationCode);
+        emit ReportOperation(isBadWeather, operationCode);
     }
 
     function addDueAmount(uint256 amount) public {
