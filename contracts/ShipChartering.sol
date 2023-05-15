@@ -9,7 +9,7 @@ import "hardhat/console.sol";
 contract ShipTimeCharteringGeneric is Initializable {
     using SafeMath for uint256;
     AggregatorV3Interface internal priceFeed;
-    int public priceEth;
+    int public priceMatic;
 
     Parties public parties;
     ContractTimes public contractTimes;
@@ -107,7 +107,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     event AddDueAmount(uint256 amount, uint256 currentContractMonth);
     event SubtractDueAmount(uint256 amount, uint256 currentContractMonth);
     event NotEnoughFounds(uint256 value, uint256 currentContractMonth);
-    event EthPrice(int priceEth);
+    event MaticPrice(int priceMatic);
 
     constructor(
         address payable _shipOwner,
@@ -124,7 +124,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         parties.arbiter_3 = _arbiter_3;
         parties.chainteringService = _chainteringService;
         priceFeed = AggregatorV3Interface(
-            0x0715A7794a1dc8e42615F059dD6e406A6594651A
+            0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada
         );
     }
 
@@ -434,7 +434,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
 
 
-    function getLatestEthPrice() public view returns (int) {
+    function getLatestMaticPrice() public view returns (int) {
         // prettier-ignore
         (
             /* uint80 roundID */,
@@ -446,8 +446,8 @@ contract ShipTimeCharteringGeneric is Initializable {
         return price;
     }
 
-    function saveLastEthPrice() public {
-        priceEth = getLatestEthPrice();
-        emit EthPrice(priceEth);
+    function saveLastMaticPrice() public {
+        priceMatic = getLatestMaticPrice();
+        emit MaticPrice(priceMatic);
     }
 }

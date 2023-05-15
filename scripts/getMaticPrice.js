@@ -1,8 +1,8 @@
 async function main() {
     const Contract = await ethers.getContractFactory("ShipTimeCharteringGeneric");
-    const contract = await Contract.attach("0x349647e6B162883617Ff42bb4AE1f17B0E87bD24");
+    const contract = await Contract.attach("0xc7CF9E6906684906AA424A1F4D59b88113a05c33");
   
-    const tx = await contract.saveLastEthPrice();
+    const tx = await contract.saveLastMaticPrice();
     tx.wait()
     console.log("🚀 ~ file: startCharter.js:6 ~ main ~ tx:", tx)
     console.log("Done")
