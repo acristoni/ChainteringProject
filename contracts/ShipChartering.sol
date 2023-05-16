@@ -101,6 +101,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         int priceMatic;
         int lastDistanceCalculation;
         int lastWindSpeed;
+        int lastCrudeOilPrice;
     }
     
     event CharterStarted(address indexed shipOwner, address indexed charterer, uint256 price, uint256 start, uint256 end);
@@ -481,5 +482,13 @@ contract ShipTimeCharteringGeneric is Initializable {
 
     function saveWindSpeed(int _windSpeed) public {
         oracleData.lastWindSpeed = _windSpeed;
+    }
+
+    function requestCrudeOilPrice() public {
+        contractTruflation.requestCrudeOilPrice();
+    }
+
+    function saveCrudeOilPrice(int _price) public {
+        oracleData.lastCrudeOilPrice = _price;
     }
 }

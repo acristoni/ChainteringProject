@@ -2,8 +2,8 @@ async function main() {
     const Contract = await ethers.getContractFactory("ShipTimeCharteringGeneric");
     const contract = await Contract.attach("0xD735909699eb2c2118B201C31ef43Ccf85413dEC");
   
-    const tx = await contract.oracleData();
-    console.log("🚀 ~ file: startCharter.js:6 ~ main ~ tx:", tx)
+    const tx = await contract.requestCrudeOilPrice();
+    tx.wait()
     console.log("Done")
   }
   

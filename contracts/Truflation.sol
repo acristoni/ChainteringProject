@@ -18,10 +18,12 @@ contract Truflation is ChainlinkClient, ConfirmedOwner {
 
     int256 public distance;
     int256 public windSpeed;
+    int256 public crudeOilPrice;
 
     event HaversineRequest(bytes32 indexed requestId, int256 distance);
     event ShipCharteringConnected(address contractShipChartering);
     event WindSpeedRequest(bytes32 indexed requestId, int256 windSpeed);
+    event CrudeOilPriceRequest(bytes32 indexed requestId, int256 crudeOilPrice);
 
     constructor() ConfirmedOwner(msg.sender) {
         setChainlinkToken(0x326C977E6efc84E512bB9C30f76E30c160eD06FB);
@@ -33,6 +35,33 @@ contract Truflation is ChainlinkClient, ConfirmedOwner {
     function conectToShipChartering(address _contractShipChartering) public {
         contractShipChartering = ShipTimeCharteringGeneric(_contractShipChartering);
         emit ShipCharteringConnected(_contractShipChartering);
+    }
+
+    function requestCrudeOilPrice() public returns (bytes32 requestId) {
+        Chainlink.Request memory req = buildChainlinkRequest(
+            jobId,
+            address(this),
+            this.fulfillCrudeOilPrice.selector
+        );
+
+        req.add("service", "truflation/series");
+        req.add("data", "{\"ids\":\"604\",\"types\":\"114\"}");
+        req.add("keypath", "");
+        req.add("abi", "uint256");
+        req.add("multiplier", "1000000000000000000");
+        // Sends the request
+        return sendChainlinkRequest(req, fee);
+    }
+
+    function fulfillCrudeOilPrice(
+        bytes32 _requestId, 
+        bytes memory bytesData  
+    ) public recordChainlinkFulfillment(_requestId) {
+        result = bytesData;
+        results[_requestId] = bytesData;
+        crudeOilPrice = getInt256(_requestId);
+        contractShipChartering.saveCrudeOilPrice(crudeOilPrice);
+        emit CrudeOilPriceRequest(_requestId, crudeOilPrice);
     }
 
     function requestWindSpeed(string calldata lat, string calldata long) public returns (bytes32 requestId) {
