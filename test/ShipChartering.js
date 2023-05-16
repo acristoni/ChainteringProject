@@ -10,11 +10,12 @@ describe("ShipTimeCharteringGeneric", () => {
   let arbiter_3;
   let chainteringService;
   let newChainteringOwner;
+  let truflationContract;
 
   beforeEach(async () => {
     //Deploy mock Truflation contract, (a contract where it's using ChainLink and Truflation to get real world data)
     const Truflation = await ethers.getContractFactory("Truflation");
-    const truflationContract = await Truflation.deploy();
+    truflationContract = await Truflation.deploy();
     const deployedTruflation = await truflationContract.deployed();
     const truflationAddress = deployedTruflation.address;
     // Deploy the contract before each test
@@ -732,6 +733,10 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events.length).to.equal(0);
     })
 
+    it("Should be able to report bad weather conditions, by ShipOwner", async() => {
+
+    })
+
     it("Should check broadcast data if ship owner report bad weather condition", async() => {
 
     })
@@ -904,7 +909,7 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events[0].args.currentContractMonth).to.equal(0);
     })
 
-    it("Should update pay rate by oil inflaction", async() => {
+    it("Should update pay rate by crude oil price inflaction", async() => {
       
     })
 
@@ -920,7 +925,7 @@ describe("ShipTimeCharteringGeneric", () => {
 
     })
 
-    it("Should convert dolar contract values to ether", async() => {
+    it("Should convert Dolar contract values to Matic", async() => {
       
     })
   })
@@ -991,32 +996,32 @@ describe("ShipTimeCharteringGeneric", () => {
   })
 
   describe("Oracle service", async() => {
-    it("Should get oil inflaction monthly", async() => {
+    it("Should get crude oil price", async() => {
 
     })
 
-    it("Should convert ether to dolar", async() => {
+    it("Should calculate crude oil inflaction between payments", async() => {
 
     })
 
-    it("Should integrate with broadcast weather service", async() => {
+    it("Should get Matic / Dolar cotation", async() => {
 
     })
 
-    it("Should be bad weather condition if waves heigth more than 2.5 meters", async() => {
+    it("Should get wind speed by latitude and longitute", async() => {
 
     })
 
-    it("Should be bad weather condition if wind speed more than 30 nautical knots", async() => {
+    it("Should be bad weather condition if wind speed more than 20 nautical knots", async() => {
       
     })
 
-    it("Should be bad weather condition if sea current speed more than 1.5 nautical knots", async() => {
-      
-    })
+    it("Should calculate distande, using Haversine formula, given two positions (latitude, longitude)", async() => {
 
-    it("Should not be bad weather condition if any of above consitions happen", async() => {
-      
     })
   })
 });
+
+//MELHORIAS:
+  // PEGAR TAMANHO DAS ONDAS
+  // PEGAR VELOCIDADE DA CORRENTE MARÍTIMA
