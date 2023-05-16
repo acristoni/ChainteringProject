@@ -12,8 +12,13 @@ describe("ShipTimeCharteringGeneric", () => {
   let newChainteringOwner;
 
   beforeEach(async () => {
+    //Deploy mock Truflation contract, (a contract where it's using ChainLink and Truflation to get real world data)
+    const Truflation = await ethers.getContractFactory("Truflation");
+    const truflationContract = await Truflation.deploy();
+    const deployedTruflation = await truflationContract.deployed();
+    const truflationAddress = deployedTruflation.address;
     // Deploy the contract before each test
-    [shipOwner, charterer, arbiter_1, arbiter_2, arbiter_3, chainteringService, newChainteringOwner] = await ethers.getSigners();
+    [shipOwner, charterer, arbiter_1, arbiter_2, arbiter_3, chainteringService, newChainteringOwner] = await ethers.getSigners();  
     const ShipTimeChartering = await ethers.getContractFactory("ShipTimeCharteringGeneric");
     shipTimeChartering = await ShipTimeChartering.deploy(
       shipOwner.address,
@@ -21,7 +26,8 @@ describe("ShipTimeCharteringGeneric", () => {
       arbiter_1.address,
       arbiter_2.address,
       arbiter_3.address,
-      chainteringService.address   
+      chainteringService.address,
+      truflationAddress  
     );
     await shipTimeChartering.deployed();
 
@@ -189,6 +195,10 @@ describe("ShipTimeCharteringGeneric", () => {
     });
   
     it("Should not allow to close the charter if it has not started yet", async function () {
+      const Truflation = await ethers.getContractFactory("Truflation");
+      const truflationContract = await Truflation.deploy();
+      const deployedTruflation = await truflationContract.deployed();
+      const truflationAddress = deployedTruflation.address;
       [shipOwner, charterer, arbiter_1, arbiter_2, arbiter_3, chainteringService] = await ethers.getSigners();
       const shipTimeChartering = await ethers.getContractFactory("ShipTimeCharteringGeneric");
       const contractDeployWithoutStart = await shipTimeChartering.deploy(
@@ -197,7 +207,8 @@ describe("ShipTimeCharteringGeneric", () => {
         arbiter_1.address,
         arbiter_2.address,
         arbiter_3.address,
-        chainteringService.address   
+        chainteringService.address,   
+        truflationAddress
       );
       await contractDeployWithoutStart.deployed();
       await expect(
