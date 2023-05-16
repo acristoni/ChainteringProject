@@ -10,15 +10,13 @@ import "hardhat/console.sol";
 contract ShipTimeCharteringGeneric is Initializable {
     using SafeMath for uint256;
     AggregatorV3Interface internal priceFeed;
-    int public priceMatic;
-
     Truflation public contractTruflation;
-    int public lastDistanceCalculation;
 
     Parties public parties;
     ContractTimes public contractTimes;
     VesselData public vesselData;
     ContractValues public contractValues;
+    ChainLinkData public oracleData;
     
     //chater data
     mapping(uint256 => uint256) public monthlyAmontDue;
@@ -99,6 +97,11 @@ contract ShipTimeCharteringGeneric is Initializable {
         bool isConsuptionAccordingContract;
         uint256 oilConsuptionDuringOperation;    
     }   
+    struct ChainLinkData {
+        int priceMatic;
+        int lastDistanceCalculation;
+        int lastWindSpeed;
+    }
     
     event CharterStarted(address indexed shipOwner, address indexed charterer, uint256 price, uint256 start, uint256 end);
     event CharterClosed(address indexed shipOwner, address indexed charterer);
@@ -454,8 +457,8 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
 
     function saveLastMaticPrice() public {
-        priceMatic = getLatestMaticPrice();
-        emit MaticPrice(priceMatic);
+        oracleData.priceMatic = getLatestMaticPrice();
+        emit MaticPrice(oracleData.priceMatic);
     }
 
     function requestHaversineDistance( 
@@ -467,6 +470,16 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
 
     function saveHaversineDistance(int _distance) public {
-        lastDistanceCalculation = _distance;
+        oracleData.lastDistanceCalculation = _distance;
+    }
+
+    function requestWindSpeed( 
+        string calldata lat, 
+        string calldata lon) public {
+        contractTruflation.requestWindSpeed( lat, lon );
+    }
+
+    function saveWindSpeed(int _windSpeed) public {
+        oracleData.lastWindSpeed = _windSpeed;
     }
 }

@@ -1,12 +1,10 @@
 async function main() {
     const Contract = await ethers.getContractFactory("ShipTimeCharteringGeneric");
-    const contract = await Contract.attach("0x539c1E419E797dfb28ae587836f460C4AADe8De6");
+    const contract = await Contract.attach("0xd4728cc01BEfdc10fff3A8079a3E1c7AB18bE1c7");
   
-    const tx = await contract.requestHaversineDistance(
+    const tx = await contract.requestWindSpeed(
       '10',
       '10',
-      '20',
-      '20'
     );
     tx.wait()
     console.log("Done")

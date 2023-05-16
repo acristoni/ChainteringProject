@@ -15,10 +15,13 @@ contract Truflation is ChainlinkClient, ConfirmedOwner {
     mapping(bytes32 => bytes) public results;
     bytes32 private jobId;
     uint256 private fee;
+
     int256 public distance;
+    int256 public windSpeed;
 
     event HaversineRequest(bytes32 indexed requestId, int256 distance);
     event ShipCharteringConnected(address contractShipChartering);
+    event WindSpeedRequest(bytes32 indexed requestId, int256 windSpeed);
 
     constructor() ConfirmedOwner(msg.sender) {
         setChainlinkToken(0x326C977E6efc84E512bB9C30f76E30c160eD06FB);
@@ -30,6 +33,37 @@ contract Truflation is ChainlinkClient, ConfirmedOwner {
     function conectToShipChartering(address _contractShipChartering) public {
         contractShipChartering = ShipTimeCharteringGeneric(_contractShipChartering);
         emit ShipCharteringConnected(_contractShipChartering);
+    }
+
+    function requestWindSpeed(string calldata lat, string calldata long) public returns (bytes32 requestId) {
+        Chainlink.Request memory req = buildChainlinkRequest(
+            jobId,
+            address(this),
+            this.fulfillWind.selector
+        );
+
+        string memory apiUrl = string(abi.encodePacked(
+            '{"url":"http://api.weatherapi.com/v1/current.json?key=e3262d6df75c4176a41143723231405&q=',lat,',',long,'&aqi=no","method":"get"}'
+        ));
+
+        req.add("service", "util/http");
+        req.add("data", apiUrl);
+        req.add("keypath", "current.wind_mph");
+        req.add("abi", "int256");
+        req.add("multiplier", "10");
+        // Sends the request
+        return sendChainlinkRequest(req, fee);
+    }
+
+    function fulfillWind(
+        bytes32 _requestId, 
+        bytes memory bytesData  
+    ) public recordChainlinkFulfillment(_requestId) {
+        result = bytesData;
+        results[_requestId] = bytesData;
+        windSpeed = getInt256(_requestId);
+        contractShipChartering.saveWindSpeed(windSpeed);
+        emit WindSpeedRequest(_requestId, windSpeed);
     }
 
     function requestHaversineDistance(

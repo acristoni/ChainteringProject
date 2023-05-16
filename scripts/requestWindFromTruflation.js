@@ -1,9 +1,13 @@
 async function main() {
     const Contract = await ethers.getContractFactory("Truflation");
-    const contract = await Contract.attach("0xc00C51FFB7B8C68e50Fac14eF6E94c34Ac6ca14B");
+    const contract = await Contract.attach("0xF29B620526AbdEbb6613e66717cD36ce4AEf5d65");
   
-    const tx = await contract.conectToShipChartering("0xd4728cc01BEfdc10fff3A8079a3E1c7AB18bE1c7");
+    const tx = await contract.requestWindSpeed(
+      '10',
+      '10'
+    );
     tx.wait()
+    console.log("🚀 ~ file: requestDistanceFromTruflation.js:12 ~ main ~ tx:", tx)
     console.log("Done")
   }
   
