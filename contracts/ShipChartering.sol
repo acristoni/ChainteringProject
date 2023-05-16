@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./Haversine.sol";
+import "./Truflation.sol";
 import "hardhat/console.sol";
 
 contract ShipTimeCharteringGeneric is Initializable {
@@ -12,7 +12,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     AggregatorV3Interface internal priceFeed;
     int public priceMatic;
 
-    Haversine public contractHaversine;
+    Truflation public contractTruflation;
     int public lastDistanceCalculation;
 
     Parties public parties;
@@ -121,7 +121,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         address payable _arbiter_2,
         address payable _arbiter_3,
         address payable _chainteringService,
-        address contractHaversineAddress
+        address contractTruflationAddress
     ) {
         parties.shipOwner = _shipOwner;
         parties.charterer = _charterer;
@@ -132,7 +132,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         priceFeed = AggregatorV3Interface(
             0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada
         );
-        contractHaversine = Haversine(contractHaversineAddress);
+        contractTruflation = Truflation(contractTruflationAddress);
     }
 
     function setUpContract(
@@ -463,7 +463,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         string calldata lon1, 
         string calldata lat2, 
         string calldata lon2 ) public {
-        contractHaversine.requestHaversineDistance( lat1, lon1, lat2, lon2 );
+        contractTruflation.requestHaversineDistance( lat1, lon1, lat2, lon2 );
     }
 
     function saveHaversineDistance(int _distance) public {

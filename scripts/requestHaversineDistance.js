@@ -1,6 +1,6 @@
 async function main() {
     const Contract = await ethers.getContractFactory("ShipTimeCharteringGeneric");
-    const contract = await Contract.attach("0xa9fa9EFeF845577bA2dC7E36aA3F47D68207237c");
+    const contract = await Contract.attach("0x3E57F2496e6063EF6b627512Dd9CB9873AC4255F");
   
     const tx = await contract.requestHaversineDistance(
       '10',
@@ -9,7 +9,6 @@ async function main() {
       '20'
     );
     tx.wait()
-    console.log("🚀 ~ file: startCharter.js:6 ~ main ~ tx:", tx)
     console.log("Done")
   }
   

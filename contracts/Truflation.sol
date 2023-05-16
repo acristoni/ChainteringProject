@@ -6,7 +6,7 @@ import "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./ShipChartering.sol";
 
-contract Haversine is ChainlinkClient, ConfirmedOwner {
+contract Truflation is ChainlinkClient, ConfirmedOwner {
     using Chainlink for Chainlink.Request;
 
     ShipTimeCharteringGeneric public contractShipChartering;
