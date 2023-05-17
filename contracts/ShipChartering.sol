@@ -29,9 +29,13 @@ contract ShipTimeCharteringGeneric is Initializable {
     
     //contract types
     struct ContractValues {
-        uint32 charterPerHour;
+        CharterPerHour charterPerHour;
         uint8 chainteringServicePayPerHour;
         uint256 penaltyPerHour;
+    }
+    struct CharterPerHour {
+        uint32 price;
+        uint256 lastUpdate; //timestamp
     }
     struct VesselData {
         uint32 vesselIMOnumber; 
@@ -98,10 +102,11 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint256 oilConsuptionDuringOperation;    
     }   
     struct ChainLinkData {
-        int priceMatic;
-        int lastDistanceCalculation;
-        int lastWindSpeed;
-        int lastCrudeOilPrice;
+        uint priceMatic;
+        uint lastDistanceCalculation;
+        uint lastWindSpeed;
+        uint lastCrudeOilPrice;
+        uint firstCrudeOilPrice;
     }
     
     event CharterStarted(address indexed shipOwner, address indexed charterer, uint256 price, uint256 start, uint256 end);
@@ -115,8 +120,9 @@ contract ShipTimeCharteringGeneric is Initializable {
     event AddDueAmount(uint256 amount, uint256 currentContractMonth);
     event SubtractDueAmount(uint256 amount, uint256 currentContractMonth);
     event NotEnoughFounds(uint256 value, uint256 currentContractMonth);
-    event MaticPrice(int priceMatic);
-    event HaversineDistance(int haversineDistance);
+    event MaticPrice(uint priceMatic);
+    event HaversineDistance(uint haversineDistance);
+    event FirstCrudeOilPrice(uint price);
 
     constructor(
         address payable _shipOwner,
@@ -149,7 +155,8 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint8 _consuptionAtOperation,
         uint8 _consuptionUnderWay
     ) external {
-        contractValues.charterPerHour = _charterPerHour;
+        contractValues.charterPerHour.price = _charterPerHour;
+        contractValues.charterPerHour.lastUpdate = block.timestamp;
         contractValues.chainteringServicePayPerHour = _chainteringServicePayPerHour;
         contractValues.penaltyPerHour = _penaltyPerHour;    
         vesselData.minimumCruisingSpeed = _minimumCruisingSpeed;
@@ -168,11 +175,12 @@ contract ShipTimeCharteringGeneric is Initializable {
         contractTimes.startDateTime = block.timestamp;
         contractTimes.endDateTime = block.timestamp.add(chartersTimeMonths * 30 days);
         vesselData.oilTotalConsuption = 0;
+        requestCrudeOilPrice();
         
         emit CharterStarted(
             parties.shipOwner, 
             parties.charterer, 
-            contractValues.charterPerHour, 
+            contractValues.charterPerHour.price, 
             contractTimes.startDateTime, 
             contractTimes.endDateTime);
     }
@@ -231,7 +239,7 @@ contract ShipTimeCharteringGeneric is Initializable {
             );
         }
 
-        uint256 amountDueOperation = contractValues.charterPerHour * operationHoursDuration;
+        uint256 amountDueOperation = contractValues.charterPerHour.price * operationHoursDuration;
         addDueAmount(amountDueOperation);
 
         emit ReportOperation(isBadWeather, operationCode);
@@ -264,6 +272,32 @@ contract ShipTimeCharteringGeneric is Initializable {
 
     function checkMonthlyAmountDue(uint256 month) view public returns(uint256 _monthlyAmontDue) {
         return monthlyAmontDue[month];
+    }
+
+    function totalAmountDueToPay() public view returns (uint256) {
+        //check last crude oil price update
+        uint timesDiference = block.timestamp - contractValues.charterPerHour.lastUpdate;
+        uint dayInMilliseconds = 86400000; // 24 * 60 * 60 * 1000
+        require(timesDiference < dayInMilliseconds, "Crude oil price must be updated, maximum 24 hours before payment");
+
+        uint256 currentContractMonth = checkCurrentContractMonth();
+        uint256 totalMonthlyDelayAmountDue = 0;
+
+        for (uint256 i = 0; i < currentContractMonth; i++) {
+            totalMonthlyDelayAmountDue += checkMonthlyAmountDue(i);
+        }
+
+        uint256 penaltyMult = contractValues.penaltyPerHour * 1000000;
+        uint256 penaltyPercent = penaltyMult.div(contractValues.charterPerHour.price);
+        uint256 totalPenalty = totalMonthlyDelayAmountDue.mul(penaltyPercent);
+        uint256 penalty = totalPenalty.div(1000000);
+
+        uint256 totalAmountDue = 
+            checkMonthlyAmountDue(currentContractMonth) + 
+            totalMonthlyDelayAmountDue +
+            penalty;
+
+        return totalAmountDue;
     }
 
     function avarageSpeed( uint256 operationHoursDuration, uint256 distance ) pure public returns (uint256 _avaraSpeed) {
@@ -458,7 +492,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
 
     function saveLastMaticPrice() public {
-        oracleData.priceMatic = getLatestMaticPrice();
+        oracleData.priceMatic = uint(getLatestMaticPrice());
         emit MaticPrice(oracleData.priceMatic);
     }
 
@@ -471,7 +505,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
 
     function saveHaversineDistance(int _distance) public {
-        oracleData.lastDistanceCalculation = _distance;
+        oracleData.lastDistanceCalculation = uint(_distance);
     }
 
     function requestWindSpeed( 
@@ -481,14 +515,33 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
 
     function saveWindSpeed(int _windSpeed) public {
-        oracleData.lastWindSpeed = _windSpeed;
+        oracleData.lastWindSpeed = uint(_windSpeed);
     }
 
     function requestCrudeOilPrice() public {
         contractTruflation.requestCrudeOilPrice();
     }
 
+    function calculateCharterPerHourInflation(int lastCrudeOilPrice) public returns (uint newCharterPerHour) {
+        oracleData.lastCrudeOilPrice = uint(lastCrudeOilPrice);
+        int priceDiference = lastCrudeOilPrice - int(oracleData.firstCrudeOilPrice);
+        int multi = 1000000000000000000; //value from Truflation contract
+        int charterPerHour = int256(int32(contractValues.charterPerHour.price));
+        int newCharterPerHourMulti = 
+            (multi * charterPerHour) +
+            (priceDiference * multi * charterPerHour);
+        return uint(newCharterPerHourMulti/multi);
+    } 
+    
     function saveCrudeOilPrice(int _price) public {
-        oracleData.lastCrudeOilPrice = _price;
+        uint price = uint(_price);
+        if (oracleData.firstCrudeOilPrice == 0) {
+            oracleData.firstCrudeOilPrice = price;
+            emit FirstCrudeOilPrice(price);
+        } else {
+            contractValues.charterPerHour.price = uint32(calculateCharterPerHourInflation(_price));
+            contractValues.charterPerHour.lastUpdate = block.timestamp;
+        }
     }
 }
+

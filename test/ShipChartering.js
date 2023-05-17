@@ -38,7 +38,7 @@ describe("ShipTimeCharteringGeneric", () => {
       75, // chainteringServicePayPerHour
       12, // minimumCruisingSpeed
       9751779, // vesselIMOnumber
-      1, // earlyCancellationPenaltyPerHour
+      20, // penaltyPerHour
       5, // consuptionstandBy
       25, // consuptionAtOperation
       20, // consuptionUnderWay
@@ -79,7 +79,7 @@ describe("ShipTimeCharteringGeneric", () => {
   
       expect(charterPerHour).to.equal(1000);
       expect(chainteringServicePayPerHour).to.equal(75);
-      expect(earlyCancellationPenaltyPerHour).to.equal(1);
+      expect(earlyCancellationPenaltyPerHour).to.equal(20);
       expect(vesselIMOnumber).to.equal(9751779);
       expect(minimumCruisingSpeed).to.equal(12);
     });
@@ -158,7 +158,7 @@ describe("ShipTimeCharteringGeneric", () => {
     it("Should calculate early cancellation penalty", async() => {
       const returnCalculation = await shipTimeChartering.earlyCancellationPenalty();
       const charterTime = 90 * 24 //3 month in hours
-      const earlyCancellationPenaltyPerHour = 1 // setUpContract function parameter
+      const earlyCancellationPenaltyPerHour = 20 // setUpContract function parameter
 
       expect(parseInt(returnCalculation)).to.equal(charterTime * earlyCancellationPenaltyPerHour);
     })
@@ -909,12 +909,29 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events[0].args.currentContractMonth).to.equal(0);
     })
 
-    it("Should update pay rate by crude oil price inflaction", async() => {
-      
+    it("Should totalAmountDueToPay function check current total amount due, with penalties", async() => {
+      //Add 10000 amount due first month, in time, so without penalty
+      await shipTimeChartering.addDueAmount(10000);
+
+      const contractTimes = await shipTimeChartering.contractTimes();
+      //Add 10000 amount due second month, delayed, so he'll pay US$ 200,00 penalty
+      const firstMonthTime = parseInt(contractTimes[0]) + 30 * 24 * 60 * 61 * 1000 ;
+      await ethers.provider.send("evm_mine", [firstMonthTime]);
+      await shipTimeChartering.addDueAmount(10000);
+
+      //Add 10000 amount due third month, delayed, so he'll pay US$ 200,00 penalty
+      const secondMonthTime = parseInt(contractTimes[0]) + 60 * 24 * 60 * 61 * 1000 ;
+      await ethers.provider.send("evm_mine", [secondMonthTime]);
+      await shipTimeChartering.addDueAmount(10000);
+
+      //Charterer didn't pay nothing until now, so he'll pay for delay penalties
+      const totalAmount = await shipTimeChartering.totalAmountDueToPay()
+
+      expect(totalAmount).to.equal(30400)
     })
 
-    it("Should pay ship owner all amount due in pay day", async() => {
-
+    it("Should update pay rate by crude oil price inflaction", async() => {
+      
     })
     
     it("Should pay Chaintering service when deposit amount", async() => {

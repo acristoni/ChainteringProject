@@ -1,6 +1,6 @@
 async function main() {
     const Contract = await ethers.getContractFactory("ShipTimeCharteringGeneric");
-    const contract = await Contract.attach("0xD735909699eb2c2118B201C31ef43Ccf85413dEC");
+    const contract = await Contract.attach("0x81BB05A286b77007Aa5350c6FC1A5F0366ddd086");
   
     const tx = await contract.requestCrudeOilPrice();
     tx.wait()

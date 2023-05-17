@@ -8,7 +8,7 @@ async function main() {
     '0x9321Cd247f2895Caf408D79c6938ff305C8d6421',// address payable _arbiter_2,
     '0xFd934b31164FEB646eDd7f2D6a839b4dD74dF0f7',// address payable _arbiter_3,
     '0x34Fa067B75A0d16aab9855E3cD360c95afaE3eC4', // address payable _chainteringService
-    '0xba698cB07C54fA754eEAaf461e7B04C058b5Af2c' // Truflation contract address
+    '0x99C38930C0A425FfD64fEc1b3D8515148800CbD3' // Truflation contract address
   );
 
   console.log("Contract deployed to address:", contract.address);

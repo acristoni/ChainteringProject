@@ -1,6 +1,6 @@
 async function main() {
     const Contract = await ethers.getContractFactory("ShipTimeCharteringGeneric");
-    const contract = await Contract.attach("0x1821BF8050667bB0C8c6AAfabEaBD9DA4C81237B");
+    const contract = await Contract.attach("0x81BB05A286b77007Aa5350c6FC1A5F0366ddd086");
   
     const tx = await contract.setUpContract(
         1000, // charterPerHour
