@@ -172,6 +172,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     
     function startCharter(uint8 chartersTimeMonths) external {
         require(msg.sender == parties.charterer, "Only charterer can start the charter ship");
+        require(contractValues.charterPerHour.lastUpdate > 0, "Contract must be set up, before start");
         contractTimes.startDateTime = block.timestamp;
         contractTimes.endDateTime = block.timestamp.add(chartersTimeMonths * 30 days);
         vesselData.oilTotalConsuption = 0;
