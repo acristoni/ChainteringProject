@@ -3,7 +3,7 @@ async function main() {
     const contract = await Contract.attach("0x81BB05A286b77007Aa5350c6FC1A5F0366ddd086");
   
     const tx = await contract.oracleData();
-    console.log("🚀 ~ file: startCharter.js:6 ~ main ~ tx:", tx)
+    console.log("🚀 ~ file: startCharter.js:6 ~ main ~ tx:", parseInt(tx.firstCrudeOilPrice))
     console.log("Done")
   }
   

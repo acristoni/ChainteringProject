@@ -279,7 +279,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         //check last crude oil price update
         uint timesDiference = block.timestamp - contractValues.charterPerHour.lastUpdate;
         uint dayInMilliseconds = 86400000; // 24 * 60 * 60 * 1000
-        require(timesDiference < dayInMilliseconds, "Crude oil price must be updated, maximum 24 hours before payment");
+        require(timesDiference < dayInMilliseconds, "Crude oil price must be updated, maximum 24 hours before payment, call requestCrudeOilPrice()");
 
         uint256 currentContractMonth = checkCurrentContractMonth();
         uint256 totalMonthlyDelayAmountDue = 0;

@@ -37,7 +37,7 @@ contract Truflation is ChainlinkClient, ConfirmedOwner {
         emit ShipCharteringConnected(_contractShipChartering);
     }
 
-    function requestCrudeOilPrice() public returns (bytes32 requestId) {
+    function requestCrudeOilPrice() public virtual returns (bytes32 requestId) {
         Chainlink.Request memory req = buildChainlinkRequest(
             jobId,
             address(this),

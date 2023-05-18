@@ -14,7 +14,7 @@ describe("ShipTimeCharteringGeneric", () => {
 
   beforeEach(async () => {
     //Deploy mock Truflation contract, (a contract where it's using ChainLink and Truflation to get real world data)
-    const Truflation = await ethers.getContractFactory("Truflation");
+    const Truflation = await ethers.getContractFactory("MockTruflation");
     truflationContract = await Truflation.deploy();
     const deployedTruflation = await truflationContract.deployed();
     const truflationAddress = deployedTruflation.address;
@@ -31,6 +31,7 @@ describe("ShipTimeCharteringGeneric", () => {
       truflationAddress  
     );
     await shipTimeChartering.deployed();
+    const shipTimeCharteringAddress = shipTimeChartering.address;
 
     //function call after deploy to finish the contract variable set up, due the 'Stack too deep' it can't be done in constructor.
     await shipTimeChartering.setUpContract(
@@ -43,6 +44,8 @@ describe("ShipTimeCharteringGeneric", () => {
       25, // consuptionAtOperation
       20, // consuptionUnderWay
     );
+    
+    await truflationContract.conectToShipChartering(shipTimeCharteringAddress);
 
     //Start 3 month contract
     await shipTimeChartering.connect(charterer).startCharter(3);
@@ -77,7 +80,7 @@ describe("ShipTimeCharteringGeneric", () => {
       const vesselIMOnumber = vesselData[0];
       const minimumCruisingSpeed = vesselData[1];
   
-      expect(charterPerHour).to.equal(1000);
+      expect(charterPerHour.price).to.equal(1000);
       expect(chainteringServicePayPerHour).to.equal(75);
       expect(earlyCancellationPenaltyPerHour).to.equal(20);
       expect(vesselIMOnumber).to.equal(9751779);
@@ -909,7 +912,7 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events[0].args.currentContractMonth).to.equal(0);
     })
 
-    it("Should totalAmountDueToPay function check current total amount due, with penalties", async() => {
+    it("Should revert totalAmountDueToPay function, if crude oil price wasn't check maximum 24 hours before", async() => {
       //Add 10000 amount due first month, in time, so without penalty
       await shipTimeChartering.addDueAmount(10000);
 
@@ -924,26 +927,45 @@ describe("ShipTimeCharteringGeneric", () => {
       await ethers.provider.send("evm_mine", [secondMonthTime]);
       await shipTimeChartering.addDueAmount(10000);
 
+      await expect(
+        shipTimeChartering
+          .totalAmountDueToPay()
+      ).to.be.revertedWith("Crude oil price must be updated, maximum 24 hours before payment, call requestCrudeOilPrice()");
+    })
+
+    it("Should totalAmountDueToPay function check current total amount due, with penalties and crude oil inflation", async() => {
+      //Add 10000 amount due first month, in time, so without penalty
+      await shipTimeChartering.addDueAmount(10000);
+      
+      const contractTimes = await shipTimeChartering.contractTimes();
+      //Add 10000 amount due second month, delayed, so he'll pay US$ 200,00 penalty
+      const firstMonthTime = parseInt(contractTimes[0]) + 30 * 24 * 60 * 61 * 1000 ;
+      await ethers.provider.send("evm_mine", [firstMonthTime]);
+      await shipTimeChartering.addDueAmount(10000);
+
+      //Add 10000 amount due third month, delayed, so he'll pay US$ 200,00 penalty
+      const secondMonthTime = parseInt(contractTimes[0]) + 60 * 24 * 60 * 61 * 1000 ;
+      await ethers.provider.send("evm_mine", [secondMonthTime]);
+      await shipTimeChartering.addDueAmount(10000);
+
+      await shipTimeChartering.requestCrudeOilPrice()
+
       //Charterer didn't pay nothing until now, so he'll pay for delay penalties
       const totalAmount = await shipTimeChartering.totalAmountDueToPay()
-
-      expect(totalAmount).to.equal(30400)
-    })
-
-    it("Should update pay rate by crude oil price inflaction", async() => {
       
-    })
-    
-    it("Should pay Chaintering service when deposit amount", async() => {
-  
-    })
-
-    it("Should calculate charterer penalty, for late payment", async() => {
-
+      expect(totalAmount).to.equal(30400)
     })
 
     it("Should convert Dolar contract values to Matic", async() => {
       
+    })
+    
+    it("Should pay Ship Owner service when deposit amount", async() => {
+  
+    })
+
+    it("Should pay Chaintering service when deposit amount", async() => {
+  
     })
   })
 
@@ -1014,11 +1036,19 @@ describe("ShipTimeCharteringGeneric", () => {
 
   describe("Oracle service", async() => {
     it("Should get crude oil price", async() => {
+      await shipTimeChartering.requestCrudeOilPrice()
 
+      const oracleData = await shipTimeChartering.oracleData();
+
+      const firstCrudeOilPrice = oracleData.firstCrudeOilPrice;
+      const lastCrudeOilPrice = oracleData.lastCrudeOilPrice;
+
+      expect(firstCrudeOilPrice).to.equal(75410000000000000000n);
+      expect(lastCrudeOilPrice).to.equal(75410000000000000000n);
     })
 
     it("Should calculate crude oil inflaction between payments", async() => {
-
+      
     })
 
     it("Should get Matic / Dolar cotation", async() => {
@@ -1033,7 +1063,7 @@ describe("ShipTimeCharteringGeneric", () => {
       
     })
 
-    it("Should calculate distande, using Haversine formula, given two positions (latitude, longitude)", async() => {
+    it("Should calculate distance, using Haversine formula, given two positions (latitude, longitude)", async() => {
 
     })
   })
