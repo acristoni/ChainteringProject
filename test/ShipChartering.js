@@ -806,8 +806,9 @@ describe("ShipTimeCharteringGeneric", () => {
     })
 
     it("Should add amount due ship owner for operation time", async() => {
-      //write new ship operation report
       const contractTimes = await shipTimeChartering.contractTimes();
+
+      //write new ship operation report
       const startDateTime = parseInt(contractTimes[0]);
       const dateDeparture = startDateTime; 
       const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
@@ -838,6 +839,37 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(amountDueAfter - amountDueBefore).to.equal(10000)
     })
 
+    it("Should revert if ship owner not update crude oil price", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const twoDaysAfterStart = parseInt(contractTimes[0]) + 2 * 24 * 60 * 60 * 1000 ;
+      await ethers.provider.send("evm_mine", [twoDaysAfterStart]);
+
+      //write new ship operation report
+      const startDateTime = parseInt(twoDaysAfterStart);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
+      const latitudeDeparture = -23.90320425631785;
+      const longitudeDerparture = -46.07624389163475;
+      const latitudeArrival = -25.248573511757215;
+      const longitudeArrival = -44.76222770000078; //about 120 nautical miles
+
+        await expect(
+          shipTimeChartering
+            .connect(shipOwner)
+            .newOperationReport(
+              dateDeparture,
+              dateArrival,
+              ethers.utils.parseUnits(String(latitudeDeparture), 18),
+              ethers.utils.parseUnits(String(longitudeDerparture), 18),
+              ethers.utils.parseUnits(String(latitudeArrival), 18),
+              ethers.utils.parseUnits(String(longitudeArrival), 18),
+              120, //distance in nautical miles
+              false, // is good Weather, 
+              200, // oil consuption per operation, 
+              2 // operation code for under way
+            )
+          ).to.be.revertedWith("Crude oil price must be updated, maximum 24 hours before payment, call requestCrudeOilPrice()");
+    })
   })
   
   describe("Payment charter", async() => {
@@ -910,30 +942,9 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events.length).to.equal(1);
       expect(events[0].args.value).to.equal(1000);
       expect(events[0].args.currentContractMonth).to.equal(0);
-    })
+    })    
 
-    it("Should revert totalAmountDueToPay function, if crude oil price wasn't check maximum 24 hours before", async() => {
-      //Add 10000 amount due first month, in time, so without penalty
-      await shipTimeChartering.addDueAmount(10000);
-
-      const contractTimes = await shipTimeChartering.contractTimes();
-      //Add 10000 amount due second month, delayed, so he'll pay US$ 200,00 penalty
-      const firstMonthTime = parseInt(contractTimes[0]) + 30 * 24 * 60 * 61 * 1000 ;
-      await ethers.provider.send("evm_mine", [firstMonthTime]);
-      await shipTimeChartering.addDueAmount(10000);
-
-      //Add 10000 amount due third month, delayed, so he'll pay US$ 200,00 penalty
-      const secondMonthTime = parseInt(contractTimes[0]) + 60 * 24 * 60 * 61 * 1000 ;
-      await ethers.provider.send("evm_mine", [secondMonthTime]);
-      await shipTimeChartering.addDueAmount(10000);
-
-      await expect(
-        shipTimeChartering
-          .totalAmountDueToPay()
-      ).to.be.revertedWith("Crude oil price must be updated, maximum 24 hours before payment, call requestCrudeOilPrice()");
-    })
-
-    it("Should totalAmountDueToPay function check current total amount due, with penalties and crude oil inflation", async() => {
+    it("Should totalAmountDueToPay function check current total amount due, with penalties", async() => {
       //Add 10000 amount due first month, in time, so without penalty
       await shipTimeChartering.addDueAmount(10000);
       
@@ -947,8 +958,6 @@ describe("ShipTimeCharteringGeneric", () => {
       const secondMonthTime = parseInt(contractTimes[0]) + 60 * 24 * 60 * 61 * 1000 ;
       await ethers.provider.send("evm_mine", [secondMonthTime]);
       await shipTimeChartering.addDueAmount(10000);
-
-      await shipTimeChartering.requestCrudeOilPrice()
 
       //Charterer didn't pay nothing until now, so he'll pay for delay penalties
       const totalAmount = await shipTimeChartering.totalAmountDueToPay()
@@ -1044,11 +1053,28 @@ describe("ShipTimeCharteringGeneric", () => {
       const lastCrudeOilPrice = oracleData.lastCrudeOilPrice;
 
       expect(firstCrudeOilPrice).to.equal(75410000000000000000n);
-      expect(lastCrudeOilPrice).to.equal(75410000000000000000n);
+      expect(lastCrudeOilPrice).to.equal(77410000000000000000n);
     })
 
     it("Should calculate crude oil inflaction between payments", async() => {
-      
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const oneMonth = parseInt(contractTimes[0]) + 30 * 24 * 60 * 60 * 1000 ;
+      await ethers.provider.send("evm_mine", [oneMonth]);
+
+      await shipTimeChartering.requestCrudeOilPrice()
+
+      const oracleData = await shipTimeChartering.oracleData();
+
+      const firstCrudeOilPrice = oracleData.firstCrudeOilPrice;
+      const lastCrudeOilPrice = oracleData.lastCrudeOilPrice;
+
+      expect(firstCrudeOilPrice).to.equal(75410000000000000000n);
+      expect(lastCrudeOilPrice).to.equal(77410000000000000000n);
+
+      const contractValues = await shipTimeChartering.contractValues();
+      const charterPerHour = parseInt(contractValues.charterPerHour.price);
+
+      expect(charterPerHour).to.equal(1025);
     })
 
     it("Should get Matic / Dolar cotation", async() => {

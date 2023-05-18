@@ -197,7 +197,6 @@ contract ShipTimeCharteringGeneric is Initializable {
         bool isBadWeather, 
         uint256 oilConsuption, 
         OperationStatus operationCode ) external {
-
         VesselReport memory vesselReport;
         Location memory departurePosition;
         Location memory arrivalPosition;
@@ -221,7 +220,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         vesselData.oilTotalConsuption += oilConsuption;
 
         uint256 timeDiference = dateArrival - dateDeparture;
-        uint256 operationHoursDuration =  timeDiference.div(3600);
+        uint256 operationHoursDuration =  timeDiference.div(3600);        
 
         if(operationCode == OperationStatus.underWay) {
             ReturnCheckSpeed memory returnCheckSpeed = checkMinimumOperationalSpeed( operationHoursDuration, distance );
@@ -240,10 +239,19 @@ contract ShipTimeCharteringGeneric is Initializable {
             );
         }
 
-        uint256 amountDueOperation = contractValues.charterPerHour.price * operationHoursDuration;
-        addDueAmount(amountDueOperation);
+        addAmountDueOperation(operationHoursDuration);
 
         emit ReportOperation(isBadWeather, operationCode);
+    }
+
+    function addAmountDueOperation (uint operationHoursDuration) public {
+         //check last crude oil price update
+        uint timesDiference = block.timestamp - contractValues.charterPerHour.lastUpdate;
+        uint dayInMilliseconds = 86400000; // 24 * 60 * 60 * 1000
+        require(timesDiference < dayInMilliseconds, "Crude oil price must be updated, maximum 24 hours before payment, call requestCrudeOilPrice()");
+
+        uint256 amountDueOperation = contractValues.charterPerHour.price * operationHoursDuration;
+        addDueAmount(amountDueOperation);
     }
 
     function addDueAmount(uint256 amount) public {
@@ -276,11 +284,6 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
 
     function totalAmountDueToPay() public view returns (uint256) {
-        //check last crude oil price update
-        uint timesDiference = block.timestamp - contractValues.charterPerHour.lastUpdate;
-        uint dayInMilliseconds = 86400000; // 24 * 60 * 60 * 1000
-        require(timesDiference < dayInMilliseconds, "Crude oil price must be updated, maximum 24 hours before payment, call requestCrudeOilPrice()");
-
         uint256 currentContractMonth = checkCurrentContractMonth();
         uint256 totalMonthlyDelayAmountDue = 0;
 
@@ -289,9 +292,8 @@ contract ShipTimeCharteringGeneric is Initializable {
         }
 
         uint256 penaltyMult = contractValues.penaltyPerHour * 1000000;
-        uint256 penaltyPercent = penaltyMult.div(contractValues.charterPerHour.price);
-        uint256 totalPenalty = totalMonthlyDelayAmountDue.mul(penaltyPercent);
-        uint256 penalty = totalPenalty.div(1000000);
+        uint256 totalPenalty = totalMonthlyDelayAmountDue.mul(penaltyMult);
+        uint256 penalty = totalPenalty.div(1000000000);
 
         uint256 totalAmountDue = 
             checkMonthlyAmountDue(currentContractMonth) + 
@@ -527,10 +529,11 @@ contract ShipTimeCharteringGeneric is Initializable {
         oracleData.lastCrudeOilPrice = uint(lastCrudeOilPrice);
         int priceDiference = lastCrudeOilPrice - int(oracleData.firstCrudeOilPrice);
         int multi = 1000000000000000000; //value from Truflation contract
+        int pricePercentDiference = priceDiference * multi / lastCrudeOilPrice;
         int charterPerHour = int256(int32(contractValues.charterPerHour.price));
         int newCharterPerHourMulti = 
             (multi * charterPerHour) +
-            (priceDiference * multi * charterPerHour);
+            (pricePercentDiference * charterPerHour);
         return uint(newCharterPerHourMulti/multi);
     } 
     
