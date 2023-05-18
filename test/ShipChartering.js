@@ -1102,7 +1102,11 @@ describe("ShipTimeCharteringGeneric", () => {
       const oracleData = await shipTimeChartering.oracleData();
       const lastWindSpeed = oracleData.lastWindSpeed;
 
+      const vesselData = await shipTimeChartering.vesselData();
+      const isInBadWeatherConditions = vesselData.isInBadWeatherConditions;
+
       expect(lastWindSpeed).to.equal(60);
+      expect(isInBadWeatherConditions).to.equal(false);
     })
 
     it("Should be bad weather condition if wind speed more than 20 nautical knots", async() => {
@@ -1149,7 +1153,11 @@ describe("ShipTimeCharteringGeneric", () => {
       const oracleData = await shipTimeCharteringBadWeather.oracleData();
       const lastWindSpeed = oracleData.lastWindSpeed;
 
+      const vesselData = await shipTimeCharteringBadWeather.vesselData();
+      const isInBadWeatherConditions = vesselData.isInBadWeatherConditions;
+
       expect(lastWindSpeed).to.equal(220);
+      expect(isInBadWeatherConditions).to.equal(true);
     })
 
     it("Should calculate distance, using Haversine formula, given two positions (latitude, longitude)", async() => {

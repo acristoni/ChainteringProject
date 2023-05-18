@@ -43,6 +43,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint8 minimumCruisingSpeed;        
         mapping(OperationStatus => uint8) oilConsumptionTonsHour;
         uint256 oilTotalConsuption;
+        bool isInBadWeatherConditions;
     }
     struct Dispute {
         uint256 startTime;
@@ -511,6 +512,11 @@ contract ShipTimeCharteringGeneric is Initializable {
 
     function saveWindSpeed(int _windSpeed) public {
         oracleData.lastWindSpeed = uint(_windSpeed);
+        if (_windSpeed > 200) {
+            vesselData.isInBadWeatherConditions = true;
+        } else {
+            vesselData.isInBadWeatherConditions = false;
+        }
     }
 
     function requestCrudeOilPrice() public {
