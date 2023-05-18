@@ -576,7 +576,6 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(latitudeArrival), 18),
           ethers.utils.parseUnits(String(longitudeArrival), 18),
           120, //distance in nautical miles
-          false, // is good Weather, 
           200, // oil consuption per operation, 
           2 // operation code for under way
         );
@@ -615,7 +614,6 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(latitudeArrival), 18),
           ethers.utils.parseUnits(String(longitudeArrival), 18),
           120, //distance in nautical miles
-          false, // is good Weather, 
           200, // oil consuption per operation, 
           2 // operation code for under way
         );
@@ -624,7 +622,7 @@ describe("ShipTimeCharteringGeneric", () => {
       const filter = shipTimeChartering.filters.ReportOperation();
       const events = await shipTimeChartering.queryFilter(filter);
       expect(events.length).to.equal(1);
-      expect(events[0].args.isBadWeather).to.equal(false);
+      expect(events[0].args.dateDeparture).to.equal(dateDeparture);
       expect(events[0].args.operationCode).to.equal(2);
     })
 
@@ -652,7 +650,6 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(latitudeArrival), 18),
           ethers.utils.parseUnits(String(longitudeArrival), 18),
           120, //distance in nautical miles
-          false, // is good Weather, 
           200, // oil consuption per operation, 
           2 // operation code for under way
         );
@@ -703,7 +700,6 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(latitudeArrival), 18),
           ethers.utils.parseUnits(String(longitudeArrival), 18),
           120, //distance in nautical miles
-          false, // is good Weather, 
           200, // oil consuption per operation, 
           2 // operation code for under way
         );
@@ -735,7 +731,6 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(latitude), 18),
           ethers.utils.parseUnits(String(longitude), 18),
           0, //vessel stoped
-          false, // is good Weather, 
           50, // oil consuption per operation, 
           0 // operation code for stand by
         );
@@ -802,7 +797,6 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(latitudeArrival), 18),
           ethers.utils.parseUnits(String(longitudeArrival), 18),
           120, //distance in nautical miles
-          false, // is good Weather, 
           300, // oil consuption per operation, 
           2 // operation code for under way
         );
@@ -839,7 +833,6 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(latitudeArrival), 18),
           ethers.utils.parseUnits(String(longitudeArrival), 18),
           120, //distance in nautical miles
-          false, // is good Weather, 
           200, // oil consuption per operation, 
           2 // operation code for under way
         );
@@ -874,7 +867,6 @@ describe("ShipTimeCharteringGeneric", () => {
               ethers.utils.parseUnits(String(latitudeArrival), 18),
               ethers.utils.parseUnits(String(longitudeArrival), 18),
               120, //distance in nautical miles
-              false, // is good Weather, 
               200, // oil consuption per operation, 
               2 // operation code for under way
             )
@@ -1103,7 +1095,7 @@ describe("ShipTimeCharteringGeneric", () => {
       const lastWindSpeed = oracleData.lastWindSpeed;
 
       const vesselData = await shipTimeChartering.vesselData();
-      const isInBadWeatherConditions = vesselData.isInBadWeatherConditions;
+      const isInBadWeatherConditions = vesselData.isInBadWeatherConditionsOracleInfo;
 
       expect(lastWindSpeed).to.equal(60);
       expect(isInBadWeatherConditions).to.equal(false);
@@ -1154,7 +1146,7 @@ describe("ShipTimeCharteringGeneric", () => {
       const lastWindSpeed = oracleData.lastWindSpeed;
 
       const vesselData = await shipTimeCharteringBadWeather.vesselData();
-      const isInBadWeatherConditions = vesselData.isInBadWeatherConditions;
+      const isInBadWeatherConditions = vesselData.isInBadWeatherConditionsOracleInfo;
 
       expect(lastWindSpeed).to.equal(220);
       expect(isInBadWeatherConditions).to.equal(true);
