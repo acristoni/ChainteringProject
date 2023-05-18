@@ -64,7 +64,7 @@ contract Truflation is ChainlinkClient, ConfirmedOwner {
         emit CrudeOilPriceRequest(_requestId, crudeOilPrice);
     }
 
-    function requestWindSpeed(string calldata lat, string calldata long) public returns (bytes32 requestId) {
+    function requestWindSpeed(string calldata lat, string calldata long) public virtual returns (bytes32 requestId) {
         Chainlink.Request memory req = buildChainlinkRequest(
             jobId,
             address(this),
@@ -99,7 +99,7 @@ contract Truflation is ChainlinkClient, ConfirmedOwner {
         string calldata lat1, 
         string calldata lon1, 
         string calldata lat2, 
-        string calldata lon2 ) public returns (bytes32 requestId) {
+        string calldata lon2 ) public virtual returns (bytes32 requestId) {
         Chainlink.Request memory req = buildChainlinkRequest(
             jobId,
             address(this),

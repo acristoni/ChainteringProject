@@ -11,15 +11,26 @@ describe("ShipTimeCharteringGeneric", () => {
   let chainteringService;
   let newChainteringOwner;
   let truflationContract;
+  let maticPriceContract;
+  let truflationAddress;
+  let priceMaticAddress;
 
   beforeEach(async () => {
     //Deploy mock Truflation contract, (a contract where it's using ChainLink and Truflation to get real world data)
     const Truflation = await ethers.getContractFactory("MockTruflation");
     truflationContract = await Truflation.deploy();
     const deployedTruflation = await truflationContract.deployed();
-    const truflationAddress = deployedTruflation.address;
+    truflationAddress = deployedTruflation.address;
+
+    // Deploy contract to get price matic usd contract from Chainlink oracle
+    const PriceMaticUSD = await ethers.getContractFactory("MockPriceMaticUSD");
+    maticPriceContract = await PriceMaticUSD.deploy();
+    const deployedPriceMatic = await maticPriceContract.deployed();
+    priceMaticAddress = deployedPriceMatic.address;
+
     // Deploy the contract before each test
     [shipOwner, charterer, arbiter_1, arbiter_2, arbiter_3, chainteringService, newChainteringOwner] = await ethers.getSigners();  
+
     const ShipTimeChartering = await ethers.getContractFactory("ShipTimeCharteringGeneric");
     shipTimeChartering = await ShipTimeChartering.deploy(
       shipOwner.address,
@@ -28,7 +39,8 @@ describe("ShipTimeCharteringGeneric", () => {
       arbiter_2.address,
       arbiter_3.address,
       chainteringService.address,
-      truflationAddress  
+      truflationAddress,
+      priceMaticAddress
     );
     await shipTimeChartering.deployed();
     const shipTimeCharteringAddress = shipTimeChartering.address;
@@ -46,6 +58,7 @@ describe("ShipTimeCharteringGeneric", () => {
     );
     
     await truflationContract.conectToShipChartering(shipTimeCharteringAddress);
+    await maticPriceContract.conectToShipChartering(shipTimeCharteringAddress);
 
     //Start 3 month contract
     await shipTimeChartering.connect(charterer).startCharter(3);
@@ -199,10 +212,6 @@ describe("ShipTimeCharteringGeneric", () => {
     });
   
     it("Should not allow to close the charter if it has not started yet", async function () {
-      const Truflation = await ethers.getContractFactory("Truflation");
-      const truflationContract = await Truflation.deploy();
-      const deployedTruflation = await truflationContract.deployed();
-      const truflationAddress = deployedTruflation.address;
       [shipOwner, charterer, arbiter_1, arbiter_2, arbiter_3, chainteringService] = await ethers.getSigners();
       const shipTimeChartering = await ethers.getContractFactory("ShipTimeCharteringGeneric");
       const contractDeployWithoutStart = await shipTimeChartering.deploy(
@@ -212,7 +221,8 @@ describe("ShipTimeCharteringGeneric", () => {
         arbiter_2.address,
         arbiter_3.address,
         chainteringService.address,   
-        truflationAddress
+        truflationAddress,
+        priceMaticAddress
       );
       await contractDeployWithoutStart.deployed();
       await expect(
@@ -1078,19 +1088,77 @@ describe("ShipTimeCharteringGeneric", () => {
     })
 
     it("Should get Matic / Dolar cotation", async() => {
+      await shipTimeChartering.requestLatestMaticPrice();
 
+      const oracleData = await shipTimeChartering.oracleData();
+      const maticPrice = oracleData.priceMatic;
+
+      expect(maticPrice).to.equal(87992557);
     })
 
     it("Should get wind speed by latitude and longitute", async() => {
+      await shipTimeChartering.requestWindSpeed('10','10');
 
+      const oracleData = await shipTimeChartering.oracleData();
+      const lastWindSpeed = oracleData.lastWindSpeed;
+
+      expect(lastWindSpeed).to.equal(60);
     })
 
     it("Should be bad weather condition if wind speed more than 20 nautical knots", async() => {
-      
+      //Deploy mock Truflation contract, (a contract where it's using ChainLink and Truflation to get real world data)
+      const Truflation = await ethers.getContractFactory("MockTruflationBadWeather");
+      const truflationContract = await Truflation.deploy();
+      const deployedTruflation = await truflationContract.deployed();
+      const truflationAddress = deployedTruflation.address;
+
+      const ShipTimeChartering = await ethers.getContractFactory("ShipTimeCharteringGeneric");
+      const shipTimeCharteringBadWeather = await ShipTimeChartering.deploy(
+        shipOwner.address,
+        charterer.address,
+        arbiter_1.address,
+        arbiter_2.address,
+        arbiter_3.address,
+        chainteringService.address,
+        truflationAddress,
+        priceMaticAddress
+      );
+      await shipTimeCharteringBadWeather.deployed();
+      const shipTimeCharteringAddress = shipTimeCharteringBadWeather.address;
+
+      //function call after deploy to finish the contract variable set up, due the 'Stack too deep' it can't be done in constructor.
+      await shipTimeCharteringBadWeather.setUpContract(
+        1000, // charterPerHour
+        75, // chainteringServicePayPerHour
+        12, // minimumCruisingSpeed
+        9751779, // vesselIMOnumber
+        20, // penaltyPerHour
+        5, // consuptionstandBy
+        25, // consuptionAtOperation
+        20, // consuptionUnderWay
+      );
+    
+      await truflationContract.conectToShipChartering(shipTimeCharteringAddress);
+      await maticPriceContract.conectToShipChartering(shipTimeCharteringAddress);
+
+      //Start 3 month contract
+      await shipTimeCharteringBadWeather.connect(charterer).startCharter(3);
+
+      await shipTimeCharteringBadWeather.requestWindSpeed('10','10');
+
+      const oracleData = await shipTimeCharteringBadWeather.oracleData();
+      const lastWindSpeed = oracleData.lastWindSpeed;
+
+      expect(lastWindSpeed).to.equal(220);
     })
 
     it("Should calculate distance, using Haversine formula, given two positions (latitude, longitude)", async() => {
+      await shipTimeChartering.requestHaversineDistance('10','10', '-20', '-20');
 
+      const oracleData = await shipTimeChartering.oracleData();
+      const lastDistanceCalculation = oracleData.lastDistanceCalculation;
+
+      expect(lastDistanceCalculation).to.equal(49670305761772860n);
     })
   })
 });

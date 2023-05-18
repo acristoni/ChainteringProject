@@ -5,11 +5,12 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./Truflation.sol";
+import "./PriceMaticUSD.sol";
 import "hardhat/console.sol";
 
 contract ShipTimeCharteringGeneric is Initializable {
     using SafeMath for uint256;
-    AggregatorV3Interface internal priceFeed;
+    PriceMaticUSD public contractPriceMaticUSD;
     Truflation public contractTruflation;
 
     Parties public parties;
@@ -131,7 +132,8 @@ contract ShipTimeCharteringGeneric is Initializable {
         address payable _arbiter_2,
         address payable _arbiter_3,
         address payable _chainteringService,
-        address contractTruflationAddress
+        address contractTruflationAddress,
+        address contractPriceMaticUSDAddress
     ) {
         parties.shipOwner = _shipOwner;
         parties.charterer = _charterer;
@@ -139,10 +141,8 @@ contract ShipTimeCharteringGeneric is Initializable {
         parties.arbiter_2 = _arbiter_2;
         parties.arbiter_3 = _arbiter_3;
         parties.chainteringService = _chainteringService;
-        priceFeed = AggregatorV3Interface(
-            0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada
-        );
         contractTruflation = Truflation(contractTruflationAddress);
+        contractPriceMaticUSD = PriceMaticUSD(contractPriceMaticUSDAddress);
     }
 
     function setUpContract(
@@ -482,20 +482,12 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
 
 
-    function getLatestMaticPrice() public view returns (int) {
-        // prettier-ignore
-        (
-            /* uint80 roundID */,
-            int price,
-            /*uint startedAt*/,
-            /*uint timeStamp*/,
-            /*uint80 answeredInRound*/
-        ) = priceFeed.latestRoundData();
-        return price;
+    function requestLatestMaticPrice() public {
+        contractPriceMaticUSD.getLatestPrice();
     }
 
-    function saveLastMaticPrice() public {
-        oracleData.priceMatic = uint(getLatestMaticPrice());
+    function saveLastMaticPrice(int price) public {
+        oracleData.priceMatic = uint(price);
         emit MaticPrice(oracleData.priceMatic);
     }
 

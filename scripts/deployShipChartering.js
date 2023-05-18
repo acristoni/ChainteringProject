@@ -8,7 +8,8 @@ async function main() {
     '0x9321Cd247f2895Caf408D79c6938ff305C8d6421',// address payable _arbiter_2,
     '0xFd934b31164FEB646eDd7f2D6a839b4dD74dF0f7',// address payable _arbiter_3,
     '0x34Fa067B75A0d16aab9855E3cD360c95afaE3eC4', // address payable _chainteringService
-    '0x99C38930C0A425FfD64fEc1b3D8515148800CbD3' // Truflation contract address
+    '0x86f2EE57305CD7322D3f117b99420e225cd1EE68', // Truflation contract address
+    '0xA304A265005295Ce23a3B0Eb4FB99Ef8F51ff69E' // price matic from chainlink contract address
   );
 
   console.log("Contract deployed to address:", contract.address);

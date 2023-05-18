@@ -1,6 +1,6 @@
 async function main() {
-    const Contract = await ethers.getContractFactory("Truflation");
-    const contract = await Contract.attach("0x86f2EE57305CD7322D3f117b99420e225cd1EE68");
+    const Contract = await ethers.getContractFactory("PriceMaticUSD");
+    const contract = await Contract.attach("0x6613144d0f61884d6F20Fe6d94f1bE3e09277Eb5");
   
     const tx = await contract.conectToShipChartering("0xecA1FBcDcD910c90DB462b315E968D26F7cAC8E4");
     tx.wait()
