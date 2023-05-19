@@ -96,15 +96,7 @@ contract ShipTimeCharteringGeneric is Initializable {
         bool isBadWeatherDuringOps;
         uint256 opsOilConsuption;
         OperationStatus operationStatus;
-    }
-    struct ReturnCheckSpeed {
-        bool isMinimumSpeedReached;
-        uint256 speed;    
-    }   
-    struct ReturnCheckOil {
-        bool isConsuptionAccordingContract;
-        uint256 oilConsuptionDuringOperation;    
-    }   
+    }    
     struct ChainLinkData {
         uint priceMatic;
         LastDistanceCalculation lastDistanceCalculation;
@@ -131,6 +123,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     event MaticPrice(uint priceMatic);
     event HaversineDistance(uint haversineDistance);
     event FirstCrudeOilPrice(uint price);
+    event BadWeather(string latitude, string longitude);
 
     constructor(
         address payable _shipOwner,
@@ -246,21 +239,22 @@ contract ShipTimeCharteringGeneric is Initializable {
         (bool isBadWeather, bool shouldOpenDispute) =  checkWeatherConditions();      
 
         if(operationCode == OperationStatus.underWay) {
-            ReturnCheckSpeed memory returnCheckSpeed = checkMinimumOperationalSpeed( operationHoursDuration );
-            if (!returnCheckSpeed.isMinimumSpeedReached) {
+            bool isMinimumSpeedReached = checkMinimumOperationalSpeed( operationHoursDuration );
+            if (!isMinimumSpeedReached) {
                 penalty += operationHoursDuration * contractValues.penaltyPerHour;
             }
         }
 
-        ReturnCheckOil memory returnCheckOil = checkOilConsuption( operationHoursDuration, oilConsuption, operationCode );
-        if (!returnCheckOil.isConsuptionAccordingContract) {
+        bool isConsuptionAccordingContract = checkOilConsuption( operationHoursDuration, oilConsuption, operationCode );
+        if (!isConsuptionAccordingContract) {
             penalty += operationHoursDuration * contractValues.penaltyPerHour;
         }
 
         if (isBadWeather) {
             addAmountDueOperation(operationHoursDuration);
         } else {
-            addAmountDueOperation(operationHoursDuration + penalty);
+            addDueAmount(penalty);
+            addAmountDueOperation(operationHoursDuration);
         }
 
         if (shouldOpenDispute) {
@@ -296,7 +290,6 @@ contract ShipTimeCharteringGeneric is Initializable {
         uint timesDiference = block.timestamp - contractValues.charterPerHour.lastUpdate;
         uint dayInMilliseconds = 86400; // 24 * 60 * 60
         require(timesDiference < dayInMilliseconds, "Crude oil price must be updated, maximum 24 hours before payment, call requestCrudeOilPrice()");
-
         uint256 amountDueOperation = contractValues.charterPerHour.price * operationHoursDuration;
         addDueAmount(amountDueOperation);
         return amountDueOperation;
@@ -353,45 +346,38 @@ contract ShipTimeCharteringGeneric is Initializable {
 
     function avarageSpeed( uint256 operationHoursDuration ) view public returns (uint256 _avaraSpeed) {
         require(oracleData.lastDistanceCalculation.value > 0, "Should calculate a distance first, call requestHaversineDistance()");
-        uint256 distance = oracleData.lastDistanceCalculation.value;
-        uint256 speed = distance.div(operationHoursDuration);
+        uint256 distanceKM = oracleData.lastDistanceCalculation.value;        
+        uint256 distanceNM = distanceKM.mul(509);         
+        uint256 speedBigNumber = distanceNM.div(operationHoursDuration);        
+        uint256 speed = speedBigNumber.div(10000000000000000);
         return speed;
     }
 
-    function checkMinimumOperationalSpeed( uint256 operationHoursDuration ) public returns (ReturnCheckSpeed memory) {
+    function checkMinimumOperationalSpeed( uint256 operationHoursDuration ) public returns (bool isMinimumSpeedReached) {
         uint256 _avarageSpeed = avarageSpeed( operationHoursDuration );
-        ReturnCheckSpeed memory returnFunction;
-        returnFunction.speed = _avarageSpeed;
 
         if (_avarageSpeed < vesselData.minimumCruisingSpeed) {  
-            returnFunction.isMinimumSpeedReached = false;
             emit BelowContractualSpeed(
                 _avarageSpeed, 
                 vesselData.minimumCruisingSpeed );
-            return returnFunction;
+            return false;
         } else {
-            returnFunction.isMinimumSpeedReached = true;
-            return returnFunction;
+            return true;
         }
     }
 
-    function checkOilConsuption( uint256 operationHoursDuration, uint256 oilConsuption, OperationStatus operationCode ) public returns (ReturnCheckOil memory) {
-        ReturnCheckOil memory returnCheckOil;
+    function checkOilConsuption( uint256 operationHoursDuration, uint256 oilConsuption, OperationStatus operationCode ) public returns (bool isConsuptionAccordingContract) {
         uint256 oilConsuptionDuringOperation = oilConsuption.div(operationHoursDuration);
-        returnCheckOil.oilConsuptionDuringOperation = oilConsuptionDuringOperation;
-
         uint32 oilConsuptionContract = contractConsuptionByOperationalType(operationCode);
 
         if (oilConsuptionDuringOperation > oilConsuptionContract) {
-            returnCheckOil.isConsuptionAccordingContract = false;
             emit ConsumptionAboveAgreed( 
                 contractConsuptionByOperationalType(operationCode), 
-                returnCheckOil.oilConsuptionDuringOperation
+                oilConsuptionDuringOperation
             );
-            return returnCheckOil;
+            return false;
         } else {
-            returnCheckOil.isConsuptionAccordingContract = true;
-            return returnCheckOil;
+            return true;
         }
     }
 
@@ -473,13 +459,13 @@ contract ShipTimeCharteringGeneric is Initializable {
 
             for (uint8 i = 0; i < allDisputes[disputeId].arbitersVoted.length; i++) {
                 address arbiter = allDisputes[disputeId].arbitersVoted[i];
-                if (allDisputes[disputeId].votes[arbiter]) {
+                if (allDisputes[disputeId].votes[arbiter] == true) {
                     isReasonableVote++;
                 } else {
-                    isNotReasonableVote--;
+                    isNotReasonableVote++;
                 }
             }
-
+            
             if (isReasonableVote > isNotReasonableVote) {
                 allDisputes[disputeId].winningPart = allDisputes[disputeId].partOpenDispute;
             } else
@@ -579,9 +565,9 @@ contract ShipTimeCharteringGeneric is Initializable {
     function informBadWeather(
         string calldata lat, 
         string calldata lon ) public {
-        
         require(msg.sender == parties.shipOwner, "Only ship owner can inform vessel under bad weather conditions");
         vesselData.isInBadWeatherConditionsShipOwnerInfo = true;
+        emit BadWeather(lat, lon);
         requestWindSpeed(lat, lon);
     }
 

@@ -229,36 +229,6 @@ describe("ShipTimeCharteringGeneric", () => {
         contractDeployWithoutStart.connect(charterer).closeCharter()
       ).to.be.revertedWith("Charter cannot be closed if it not started");
     });
-
-    it("Should ship operation be off hire to close contract", async() => {
-
-    })
-
-    it("Should not close contract if ship is not off hire", async() => {
-      
-    })
-
-    it("Should charter pay any amount due before close the contract", async() => {
-      //PRIMEIRO DEFINIR COMO SERA ACUMULADO ESSE VALOR DEVIDO!
-    })
-
-    it("Should not allow to close the charter if there is an open dispute", async function () {
-      // await shipTimeChartering.connect(charterer).startCharter(1);
-      
-      // CRIAR FUNÇÃO DE ABRIR UMA DISPUTA PRIMEIRO PARA PODER TESTAR
-
-      // await expect(
-      //   shipTimeCharteringGeneric.connect(charterer).closeCharter()
-      // ).to.be.revertedWith("Charter cannot be closed if there's some dispute opened");
-    });
-
-    it("Should close if all oil consuption are equal to oil supply", async() => {
-
-    })
-
-    it("Should discount from amount due the diference between oil supply and oil consuption, if it's positive", async() => {
-      //passr valor do oleo como parametro
-    })
   })
 
   describe("Disputes", async() => {
@@ -545,26 +515,102 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(amountDueAfter).to.equal(8000)
     })
 
-    ("It should close a dispute open by ship owner and it's not reasonable", async() => {
+    it("Should close a dispute open by ship owner and it's not reasonable", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startTime = parseInt(contractTimes[0]);
 
+      //first open dispute
+      await shipTimeChartering.createDispute(
+        startTime,
+        startTime + (10 * 3600), //10 hours voyage
+        "Crew member sick, not off hire", //reason
+        10000, //value
+        0 // ship owner open this dispute
+      );
+
+      //first vote
+      await shipTimeChartering
+              .connect(arbiter_1)
+              .judgeDispute(
+                1, //dispute id
+                false //is not reasonable
+              )
+
+      //second vote
+      await shipTimeChartering
+              .connect(arbiter_2)
+              .judgeDispute(
+                1, //dispute id
+                false //is not reasonable
+              )
+
+       //third vote
+       await shipTimeChartering
+              .connect(arbiter_3)
+              .judgeDispute(
+                1, //dispute id
+                false //is not reasonable
+              )
+
+      const isSomeOpenDispute = await shipTimeChartering.checkOpenDispute();
+      expect(isSomeOpenDispute).to.equal(false);
     })
 
-    ("It should close a dispute open by charterer and it's not reasonable", async() => {
+    it("Should close a dispute open by charterer and it's not reasonable", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startTime = parseInt(contractTimes[0]);
 
+      //first open dispute
+      await shipTimeChartering.createDispute(
+        startTime,
+        startTime + (10 * 3600), //10 hours voyage
+        "It's not bad weather", //reason
+        10000, //value
+        1 // charterer open this dispute
+      );
+
+      //first vote
+      await shipTimeChartering
+              .connect(arbiter_1)
+              .judgeDispute(
+                1, //dispute id
+                false //is not reasonable
+              )
+
+      //second vote
+      await shipTimeChartering
+              .connect(arbiter_2)
+              .judgeDispute(
+                1, //dispute id
+                false //is not reasonable
+              )
+
+       //third vote
+       await shipTimeChartering
+              .connect(arbiter_3)
+              .judgeDispute(
+                1, //dispute id
+                false //is not reasonable
+              )
+
+      const isSomeOpenDispute = await shipTimeChartering.checkOpenDispute();
+      expect(isSomeOpenDispute).to.equal(false);
     })
   })
 
   describe("Report vessel operations by ship owner", async() => {
-    it("Should save date departure, date arrival, position departure, position arrive, is bad weather conditions, oil consuption and operational status", async() => {
+    it("Should save date departure, date arrival, position departure, position arrive, oil consuption and operational status", async() => {
+      await shipTimeChartering.requestHaversineDistance('10', '10', '-20', '-20');
+
       //write new ship operation report
       const contractTimes = await shipTimeChartering.contractTimes();
       const startDateTime = parseInt(contractTimes[0]);
       const dateDeparture = startDateTime; 
-      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
-      const latitudeDeparture = -23.90320425631785;
-      const longitudeDerparture = -46.07624389163475;
-      const latitudeArrival = -25.248573511757215;
-      const longitudeArrival = -44.76222770000078; //about 120 nautical miles
+      const dateArrival = dateDeparture + (210 * 3600); //210 hours voyage
+      const latitudeDeparture = 10;
+      const longitudeDerparture = 10;
+      const latitudeArrival = -20;
+      const longitudeArrival = -20; //about 2530 nautical miles
 
       await shipTimeChartering
         .connect(shipOwner)
@@ -575,34 +621,33 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(longitudeDerparture), 18),
           ethers.utils.parseUnits(String(latitudeArrival), 18),
           ethers.utils.parseUnits(String(longitudeArrival), 18),
-          120, //distance in nautical miles
-          200, // oil consuption per operation, 
+          4000, // oil consuption per operation, 
           2 // operation code for under way
         );
       
       const reportDataSaved = await shipTimeChartering.getOperationReport(dateDeparture);
         expect(reportDataSaved.startDate).to.equal(dateDeparture);
         expect(reportDataSaved.endDate).to.equal(dateArrival);
-        expect(reportDataSaved.startPosition[0]).to.equal(ethers.utils.parseUnits(String(latitudeDeparture), 18));
-        expect(reportDataSaved.startPosition[1]).to.equal(ethers.utils.parseUnits(String(longitudeDerparture), 18));
-        expect(reportDataSaved.endPosition[0]).to.equal(ethers.utils.parseUnits(String(latitudeArrival), 18));
-        expect(reportDataSaved.endPosition[1]).to.equal(ethers.utils.parseUnits(String(longitudeArrival), 18));
-        expect(reportDataSaved.distance).to.equal(120);
+        expect(reportDataSaved.latitudeDeparture).to.equal(ethers.utils.parseUnits(String(latitudeDeparture), 18));
+        expect(reportDataSaved.longitudeDerparture).to.equal(ethers.utils.parseUnits(String(longitudeDerparture), 18));
+        expect(reportDataSaved.latitudeArrival).to.equal(ethers.utils.parseUnits(String(latitudeArrival), 18));
+        expect(reportDataSaved.longitudeArrival).to.equal(ethers.utils.parseUnits(String(longitudeArrival), 18));
         expect(reportDataSaved.isBadWeatherDuringOps).to.equal(false);
-        expect(reportDataSaved.opsOilConsuption).to.equal(200);
+        expect(reportDataSaved.opsOilConsuption).to.equal(4000);
         expect(reportDataSaved.operationStatus).to.equal(2);
     })
 
     it("Should emit Operation Report event", async() => {
+      await shipTimeChartering.requestHaversineDistance('10', '10', '-20', '-20');
       //write new ship operation report
       const contractTimes = await shipTimeChartering.contractTimes();
       const startDateTime = parseInt(contractTimes[0]);
       const dateDeparture = startDateTime; 
-      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
-      const latitudeDeparture = -23.90320425631785;
-      const longitudeDerparture = -46.07624389163475;
-      const latitudeArrival = -25.248573511757215;
-      const longitudeArrival = -44.76222770000078; //about 120 nautical miles
+      const dateArrival = dateDeparture + (210 * 3600); //210 hours voyage
+      const latitudeDeparture = 10;
+      const longitudeDerparture = 10;
+      const latitudeArrival = -20;
+      const longitudeArrival = -20; //about 2530 nautical miles
 
       await shipTimeChartering
         .connect(shipOwner)
@@ -613,8 +658,7 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(longitudeDerparture), 18),
           ethers.utils.parseUnits(String(latitudeArrival), 18),
           ethers.utils.parseUnits(String(longitudeArrival), 18),
-          120, //distance in nautical miles
-          200, // oil consuption per operation, 
+          4000, // oil consuption per operation, 
           2 // operation code for under way
         );
 
@@ -627,15 +671,16 @@ describe("ShipTimeCharteringGeneric", () => {
     })
 
     it("Should sum oil consuption during operation to total oil consuption in contract storage", async() => {
+      await shipTimeChartering.requestHaversineDistance('10', '10', '-20', '-20');
       //write new ship operation report
       const contractTimes = await shipTimeChartering.contractTimes();
       const startDateTime = parseInt(contractTimes[0]);
       const dateDeparture = startDateTime; 
-      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
-      const latitudeDeparture = -23.90320425631785;
-      const longitudeDerparture = -46.07624389163475;
-      const latitudeArrival = -25.248573511757215;
-      const longitudeArrival = -44.76222770000078; //about 120 nautical miles
+      const dateArrival = dateDeparture + (210 * 3600); //210 hours voyage
+      const latitudeDeparture = 10;
+      const longitudeDerparture = 10;
+      const latitudeArrival = -20;
+      const longitudeArrival = -20; //about 2530 nautical miles
       
       const vesselDataBeforeReport = await shipTimeChartering.vesselData()
       const totalOilConsuptionBeforeReport = vesselDataBeforeReport[2]
@@ -649,46 +694,37 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(longitudeDerparture), 18),
           ethers.utils.parseUnits(String(latitudeArrival), 18),
           ethers.utils.parseUnits(String(longitudeArrival), 18),
-          120, //distance in nautical miles
-          200, // oil consuption per operation, 
+          4000, // oil consuption per operation, 
           2 // operation code for under way
         );
 
       const vesselDataAfterReport = await shipTimeChartering.vesselData()
       const totalOilConsuptionAfterReport = vesselDataAfterReport[2]
 
-      expect(totalOilConsuptionAfterReport - totalOilConsuptionBeforeReport).to.equal(200)
+      expect(totalOilConsuptionAfterReport - totalOilConsuptionBeforeReport).to.equal(4000)
     })
 
     it("Should calculate avarage speed", async() => {
+      await shipTimeChartering.requestHaversineDistance('10', '10', '-20', '-20');
+
       const avarageSpeed = await shipTimeChartering.avarageSpeed(
-        10, // operation time duration in hours
-        120 //distance in nautical miles
+        210 // operation time duration in hours
       );
 
       expect(avarageSpeed).to.equal(12)
     })
 
-    it("Should check if contract minimum speed was reached", async() => {
-      const response = await shipTimeChartering.checkMinimumOperationalSpeed(
-        10, // operation time duration in hours
-        120 //distance in nautical miles
-      )
-
-      expect( response.isMinimumSpeedReached ).to.equal(true)
-      expect( response.speed ).to.equal(12)
-    })
-
     it("Should emit a BelowContractualSpeed event if contract minimum speed was NOT reached", async() => {
+      await shipTimeChartering.requestHaversineDistance('10', '10', '-20', '-20');
       //write new ship operation report
       const contractTimes = await shipTimeChartering.contractTimes();
       const startDateTime = parseInt(contractTimes[0]);
       const dateDeparture = startDateTime; 
-      const dateArrival = dateDeparture + (12 * 3600); //12 hours voyage - AVARAGE SPEED 10
-      const latitudeDeparture = -23.90320425631785;
-      const longitudeDerparture = -46.07624389163475;
-      const latitudeArrival = -25.248573511757215;
-      const longitudeArrival = -44.76222770000078; //about 120 nautical miles
+      const dateArrival = dateDeparture + (300 * 3600); //300 hours voyage
+      const latitudeDeparture = 10;
+      const longitudeDerparture = 10;
+      const latitudeArrival = -20;
+      const longitudeArrival = -20; //about 2530 nautical miles
 
       await shipTimeChartering
         .connect(shipOwner)
@@ -699,8 +735,7 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(longitudeDerparture), 18),
           ethers.utils.parseUnits(String(latitudeArrival), 18),
           ethers.utils.parseUnits(String(longitudeArrival), 18),
-          120, //distance in nautical miles
-          200, // oil consuption per operation, 
+          4000, // oil consuption per operation, 
           2 // operation code for under way
         );
       
@@ -708,7 +743,7 @@ describe("ShipTimeCharteringGeneric", () => {
       const filter = shipTimeChartering.filters.BelowContractualSpeed();
       const events = await shipTimeChartering.queryFilter(filter);
       expect(events.length).to.equal(1);
-      expect(events[0].args.avarageSpeed).to.equal(10);
+      expect(events[0].args.avarageSpeed).to.equal(8);
       expect(events[0].args.minimumCruisingSpeed).to.equal(12);
     })
 
@@ -730,7 +765,6 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(longitude), 18),
           ethers.utils.parseUnits(String(latitude), 18),
           ethers.utils.parseUnits(String(longitude), 18),
-          0, //vessel stoped
           50, // oil consuption per operation, 
           0 // operation code for stand by
         );
@@ -742,50 +776,47 @@ describe("ShipTimeCharteringGeneric", () => {
     })
 
     it("Should be able to report bad weather conditions, by ShipOwner", async() => {
+      await shipTimeChartering.connect(shipOwner).informBadWeather('10','10');
 
+      const vesselData = await shipTimeChartering.vesselData();
+      const isInBadWeatherConditionsShipOwnerInfo = vesselData.isInBadWeatherConditionsShipOwnerInfo;
+
+      expect(isInBadWeatherConditionsShipOwnerInfo).to.equal(true);
+
+      // Check the emitted event
+      const filter = shipTimeChartering.filters.BadWeather();
+      const events = await shipTimeChartering.queryFilter(filter);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.latitude).to.equal('10');
+      expect(events[0].args.longitude).to.equal('10');
     })
 
     it("Should check broadcast data if ship owner report bad weather condition", async() => {
+      await shipTimeChartering.connect(shipOwner).informBadWeather('10','10');
 
+      const vesselData = await shipTimeChartering.vesselData();
+      const isInBadWeatherConditionsOracleInfo = vesselData.isInBadWeatherConditionsOracleInfo;
+
+      const oracleData = await shipTimeChartering.oracleData();
+      const lastWindSpeed = oracleData.lastWindSpeed;
+
+      expect(isInBadWeatherConditionsOracleInfo).to.equal(false);
+      expect(lastWindSpeed).to.equal(60);
     })
 
     it("Should open a dispute if ship owner report bad weather and broadcast contest", async() => {
+      await shipTimeChartering.connect(shipOwner).informBadWeather('10','10');
 
-    })
-
-    it("Should allow avarage speed less than contract minimum speed, if bad weather", async() => {
-
-    })
-
-    it("Should allow oil consuption superior, if bad weather", async() => {
-
-    })
-
-    it("Should check if reported oil consuption is less or equal contract oil consuption for operation", async() => {
-      const response = await shipTimeChartering.checkOilConsuption(
-        10, // operation time duration in hours 
-        200, //oil consuption tons per hour, 
-        2 //operationCode for vessel under way
-      );
-
-      expect(response.isConsuptionAccordingContract).to.equal(true);
-      expect(response.oilConsuptionDuringOperation).to.equal(20);
-    })
-
-    it("Should calculate penalty, if speed not reached", async() => {
-
-    })
-
-    it("Should emit event consumption above agreed", async() => {
+      await shipTimeChartering.requestHaversineDistance('10', '10', '-20', '-20');
       //write new ship operation report
       const contractTimes = await shipTimeChartering.contractTimes();
       const startDateTime = parseInt(contractTimes[0]);
       const dateDeparture = startDateTime; 
-      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
-      const latitudeDeparture = -23.90320425631785;
-      const longitudeDerparture = -46.07624389163475;
-      const latitudeArrival = -25.248573511757215;
-      const longitudeArrival = -44.76222770000078; //about 120 nautical miles
+      const dateArrival = dateDeparture + (300 * 3600); //300 hours voyage
+      const latitudeDeparture = 10;
+      const longitudeDerparture = 10;
+      const latitudeArrival = -20;
+      const longitudeArrival = -20; //about 2530 nautical miles
 
       await shipTimeChartering
         .connect(shipOwner)
@@ -796,8 +827,238 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(longitudeDerparture), 18),
           ethers.utils.parseUnits(String(latitudeArrival), 18),
           ethers.utils.parseUnits(String(longitudeArrival), 18),
-          120, //distance in nautical miles
-          300, // oil consuption per operation, 
+          4000, // oil consuption per operation, 
+          2 // operation code for under way
+        );
+
+      const isSomeOpenDispute = await shipTimeChartering.checkOpenDispute()
+      expect(isSomeOpenDispute).to.equal(true);
+    })
+
+    it("Should allow avarage speed less than contract minimum speed, if bad weather", async() => {
+      //Deploy mock Truflation contract, (a contract where it's using ChainLink and Truflation to get real world data)
+      const Truflation = await ethers.getContractFactory("MockTruflationBadWeather");
+      const truflationContract = await Truflation.deploy();
+      const deployedTruflation = await truflationContract.deployed();
+      const truflationAddress = deployedTruflation.address;
+
+      const ShipTimeChartering = await ethers.getContractFactory("ShipTimeCharteringGeneric");
+      const shipTimeCharteringBadWeather = await ShipTimeChartering.deploy(
+        shipOwner.address,
+        charterer.address,
+        arbiter_1.address,
+        arbiter_2.address,
+        arbiter_3.address,
+        chainteringService.address,
+        truflationAddress,
+        priceMaticAddress
+      );
+      await shipTimeCharteringBadWeather.deployed();
+      const shipTimeCharteringAddress = shipTimeCharteringBadWeather.address;
+
+      //function call after deploy to finish the contract variable set up, due the 'Stack too deep' it can't be done in constructor.
+      await shipTimeCharteringBadWeather.setUpContract(
+        1000, // charterPerHour
+        75, // chainteringServicePayPerHour
+        12, // minimumCruisingSpeed
+        9751779, // vesselIMOnumber
+        20, // penaltyPerHour
+        5, // consuptionstandBy
+        25, // consuptionAtOperation
+        20, // consuptionUnderWay
+      );
+    
+      await truflationContract.conectToShipChartering(shipTimeCharteringAddress);
+      await maticPriceContract.conectToShipChartering(shipTimeCharteringAddress);
+
+      //Start 3 month contract
+      await shipTimeCharteringBadWeather.connect(charterer).startCharter(3);
+
+      const amountDueBefore = await shipTimeCharteringBadWeather.checkMonthlyAmountDue(0);
+
+      await shipTimeCharteringBadWeather.connect(shipOwner).informBadWeather('10','10');
+
+      await shipTimeCharteringBadWeather.requestHaversineDistance('10', '10', '-20', '-20');
+      //write new ship operation report
+      const contractTimes = await shipTimeCharteringBadWeather.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (300 * 3600); //300 hours voyage
+      const latitudeDeparture = 10;
+      const longitudeDerparture = 10;
+      const latitudeArrival = -20;
+      const longitudeArrival = -20; //about 2530 nautical miles
+
+      await shipTimeCharteringBadWeather
+        .connect(shipOwner)
+        .newOperationReport(
+          dateDeparture,
+          dateArrival,
+          ethers.utils.parseUnits(String(latitudeDeparture), 18),
+          ethers.utils.parseUnits(String(longitudeDerparture), 18),
+          ethers.utils.parseUnits(String(latitudeArrival), 18),
+          ethers.utils.parseUnits(String(longitudeArrival), 18),
+          4000, // oil consuption per operation, 
+          2 // operation code for under way
+        );
+
+        const amountDueAfter = await shipTimeCharteringBadWeather.checkMonthlyAmountDue(0);
+        expect(amountDueAfter - amountDueBefore).to.equal(300000);
+    })
+
+    it("Should allow oil consuption superior, if bad weather", async() => {
+      //Deploy mock Truflation contract, (a contract where it's using ChainLink and Truflation to get real world data)
+      const Truflation = await ethers.getContractFactory("MockTruflationBadWeather");
+      const truflationContract = await Truflation.deploy();
+      const deployedTruflation = await truflationContract.deployed();
+      const truflationAddress = deployedTruflation.address;
+
+      const ShipTimeChartering = await ethers.getContractFactory("ShipTimeCharteringGeneric");
+      const shipTimeCharteringBadWeather = await ShipTimeChartering.deploy(
+        shipOwner.address,
+        charterer.address,
+        arbiter_1.address,
+        arbiter_2.address,
+        arbiter_3.address,
+        chainteringService.address,
+        truflationAddress,
+        priceMaticAddress
+      );
+      await shipTimeCharteringBadWeather.deployed();
+      const shipTimeCharteringAddress = shipTimeCharteringBadWeather.address;
+
+      //function call after deploy to finish the contract variable set up, due the 'Stack too deep' it can't be done in constructor.
+      await shipTimeCharteringBadWeather.setUpContract(
+        1000, // charterPerHour
+        75, // chainteringServicePayPerHour
+        12, // minimumCruisingSpeed
+        9751779, // vesselIMOnumber
+        20, // penaltyPerHour
+        5, // consuptionstandBy
+        25, // consuptionAtOperation
+        20, // consuptionUnderWay
+      );
+    
+      await truflationContract.conectToShipChartering(shipTimeCharteringAddress);
+      await maticPriceContract.conectToShipChartering(shipTimeCharteringAddress);
+
+      //Start 3 month contract
+      await shipTimeCharteringBadWeather.connect(charterer).startCharter(3);
+
+      const amountDueBefore = await shipTimeCharteringBadWeather.checkMonthlyAmountDue(0);
+
+      await shipTimeCharteringBadWeather.connect(shipOwner).informBadWeather('10','10');
+
+      await shipTimeCharteringBadWeather.requestHaversineDistance('10', '10', '-20', '-20');
+      //write new ship operation report
+      const contractTimes = await shipTimeCharteringBadWeather.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (210 * 3600); //210 hours voyage
+      const latitudeDeparture = 10;
+      const longitudeDerparture = 10;
+      const latitudeArrival = -20;
+      const longitudeArrival = -20; //about 2530 nautical miles
+
+      await shipTimeCharteringBadWeather
+        .connect(shipOwner)
+        .newOperationReport(
+          dateDeparture,
+          dateArrival,
+          ethers.utils.parseUnits(String(latitudeDeparture), 18),
+          ethers.utils.parseUnits(String(longitudeDerparture), 18),
+          ethers.utils.parseUnits(String(latitudeArrival), 18),
+          ethers.utils.parseUnits(String(longitudeArrival), 18),
+          5000, // oil consuption per operation, 
+          2 // operation code for under way
+        );
+      
+        const amountDueAfter = await shipTimeCharteringBadWeather.checkMonthlyAmountDue(0);
+        expect(amountDueAfter - amountDueBefore).to.equal(210000);
+    })
+
+    it("Should calculate penalty, if speed not reached", async() => {
+      const amountDueBefore = await shipTimeChartering.checkMonthlyAmountDue(0);
+      await shipTimeChartering.requestHaversineDistance('10', '10', '-20', '-20');
+      //write new ship operation report
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (300 * 3600); //300 hours voyage
+      const latitudeDeparture = 10;
+      const longitudeDerparture = 10;
+      const latitudeArrival = -20;
+      const longitudeArrival = -20; //about 2530 nautical miles
+
+      await shipTimeChartering
+        .connect(shipOwner)
+        .newOperationReport(
+          dateDeparture,
+          dateArrival,
+          ethers.utils.parseUnits(String(latitudeDeparture), 18),
+          ethers.utils.parseUnits(String(longitudeDerparture), 18),
+          ethers.utils.parseUnits(String(latitudeArrival), 18),
+          ethers.utils.parseUnits(String(longitudeArrival), 18),
+          4000, // oil consuption per operation, 
+          2 // operation code for under way
+        );
+
+        const amountDueAfter = await shipTimeChartering.checkMonthlyAmountDue(0);
+        expect(amountDueAfter - amountDueBefore).to.equal(306000);
+    })
+
+    it("Should calculate penalty, if oil consuption above agreement", async() => {
+      const amountDueBefore = await shipTimeChartering.checkMonthlyAmountDue(0);
+      await shipTimeChartering.requestHaversineDistance('10', '10', '-20', '-20');
+      //write new ship operation report
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (210 * 3600); //210 hours voyage
+      const latitudeDeparture = 10;
+      const longitudeDerparture = 10;
+      const latitudeArrival = -20;
+      const longitudeArrival = -20; //about 2530 nautical miles
+
+      await shipTimeChartering
+        .connect(shipOwner)
+        .newOperationReport(
+          dateDeparture,
+          dateArrival,
+          ethers.utils.parseUnits(String(latitudeDeparture), 18),
+          ethers.utils.parseUnits(String(longitudeDerparture), 18),
+          ethers.utils.parseUnits(String(latitudeArrival), 18),
+          ethers.utils.parseUnits(String(longitudeArrival), 18),
+          5000, // oil consuption per operation, 
+          2 // operation code for under way
+        );
+
+        const amountDueAfter = await shipTimeChartering.checkMonthlyAmountDue(0);
+        expect(amountDueAfter - amountDueBefore).to.equal(214200);
+    })
+
+    it("Should emit event consumption above agreed", async() => {
+      await shipTimeChartering.requestHaversineDistance('10', '10', '-20', '-20');
+      //write new ship operation report
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (210 * 3600); //210 hours voyage
+      const latitudeDeparture = 10;
+      const longitudeDerparture = 10;
+      const latitudeArrival = -20;
+      const longitudeArrival = -20; //about 2530 nautical miles
+
+      await shipTimeChartering
+        .connect(shipOwner)
+        .newOperationReport(
+          dateDeparture,
+          dateArrival,
+          ethers.utils.parseUnits(String(latitudeDeparture), 18),
+          ethers.utils.parseUnits(String(longitudeDerparture), 18),
+          ethers.utils.parseUnits(String(latitudeArrival), 18),
+          ethers.utils.parseUnits(String(longitudeArrival), 18),
+          5000, // oil consuption per operation, 
           2 // operation code for under way
         );
 
@@ -806,20 +1067,22 @@ describe("ShipTimeCharteringGeneric", () => {
       const events = await shipTimeChartering.queryFilter(filter);
       expect(events.length).to.equal(1);
       expect(events[0].args.consuptionAgreed).to.equal(20);
-      expect(events[0].args.consuptionReported).to.equal(30);
+      expect(events[0].args.consuptionReported).to.equal(23);
     })
 
     it("Should add amount due ship owner for operation time", async() => {
+      await shipTimeChartering.requestHaversineDistance('10', '10', '-20', '-20');
+
       const contractTimes = await shipTimeChartering.contractTimes();
 
       //write new ship operation report
       const startDateTime = parseInt(contractTimes[0]);
       const dateDeparture = startDateTime; 
-      const dateArrival = dateDeparture + (10 * 3600); //10 hours voyage
-      const latitudeDeparture = -23.90320425631785;
-      const longitudeDerparture = -46.07624389163475;
-      const latitudeArrival = -25.248573511757215;
-      const longitudeArrival = -44.76222770000078; //about 120 nautical miles
+      const dateArrival = dateDeparture + (210 * 3600); //210 hours voyage
+      const latitudeDeparture = 10;
+      const longitudeDerparture = 10;
+      const latitudeArrival = -20;
+      const longitudeArrival = -20; //about 2530 nautical miles
       
       const amountDueBefore = await shipTimeChartering.checkMonthlyAmountDue(0);
 
@@ -832,17 +1095,16 @@ describe("ShipTimeCharteringGeneric", () => {
           ethers.utils.parseUnits(String(longitudeDerparture), 18),
           ethers.utils.parseUnits(String(latitudeArrival), 18),
           ethers.utils.parseUnits(String(longitudeArrival), 18),
-          120, //distance in nautical miles
-          200, // oil consuption per operation, 
+          4000, // oil consuption per operation, 
           2 // operation code for under way
         );
 
       const amountDueAfter = await shipTimeChartering.checkMonthlyAmountDue(0);
 
-      expect(amountDueAfter - amountDueBefore).to.equal(10000)
+      expect(amountDueAfter - amountDueBefore).to.equal(210000);
     })
 
-    it("Should revert if ship owner not update crude oil price", async() => {
+    it("Should revert if ship owner not calculate distance using requestHaversineDistance method", async() => {
       const contractTimes = await shipTimeChartering.contractTimes();
       const twoDaysAfterStart = parseInt(contractTimes[0]) + 2 * 24 * 60 * 60 * 1000 ;
       await ethers.provider.send("evm_mine", [twoDaysAfterStart]);
@@ -866,11 +1128,40 @@ describe("ShipTimeCharteringGeneric", () => {
               ethers.utils.parseUnits(String(longitudeDerparture), 18),
               ethers.utils.parseUnits(String(latitudeArrival), 18),
               ethers.utils.parseUnits(String(longitudeArrival), 18),
-              120, //distance in nautical miles
+              4000, // oil consuption per operation, 
+              2 // operation code for under way
+            )
+          ).to.be.revertedWith("Distance must be calculated, maximum 15 minutes before report, call requestHaversineDistance()");
+    })
+
+    it("Should revert if other person, than ship owner try to send a operation report", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const twoDaysAfterStart = parseInt(contractTimes[0]) + 2 * 24 * 60 * 60 * 1000 ;
+      await ethers.provider.send("evm_mine", [twoDaysAfterStart]);
+
+      //write new ship operation report
+      const startDateTime = parseInt(contractTimes[0]);
+      const dateDeparture = startDateTime; 
+      const dateArrival = dateDeparture + (210 * 3600); //210 hours voyage
+      const latitudeDeparture = 10;
+      const longitudeDerparture = 10;
+      const latitudeArrival = -20;
+      const longitudeArrival = -20; //about 2530 nautical miles
+
+        await expect(
+          shipTimeChartering
+            .connect(charterer)
+            .newOperationReport(
+              dateDeparture,
+              dateArrival,
+              ethers.utils.parseUnits(String(latitudeDeparture), 18),
+              ethers.utils.parseUnits(String(longitudeDerparture), 18),
+              ethers.utils.parseUnits(String(latitudeArrival), 18),
+              ethers.utils.parseUnits(String(longitudeArrival), 18),
               200, // oil consuption per operation, 
               2 // operation code for under way
             )
-          ).to.be.revertedWith("Crude oil price must be updated, maximum 24 hours before payment, call requestCrudeOilPrice()");
+          ).to.be.revertedWith("Only ship owner can report vessel operation");
     })
   })
   
@@ -882,13 +1173,13 @@ describe("ShipTimeCharteringGeneric", () => {
 
     it("Should be able to check current contract month, mocking anothers months", async() => {
       const contractTimes = await shipTimeChartering.contractTimes();
-      const firstMonthTime = parseInt(contractTimes[0]) + 45 * 24 * 60 * 60 * 1000 ;
+      const firstMonthTime = parseInt(contractTimes[0]) + 45 * 24 * 60 * 60 ;
       await ethers.provider.send("evm_mine", [firstMonthTime]);
       const firstMonth = await shipTimeChartering.checkCurrentContractMonth()
 
       expect(firstMonth).to.equal(1)
 
-      const secondMonthTime = parseInt(contractTimes[0]) + 60 * 24 * 60 * 61 * 1000 ;
+      const secondMonthTime = parseInt(contractTimes[0]) + 60 * 24 * 60 * 61 ;
       await ethers.provider.send("evm_mine", [secondMonthTime]);
       const secondMonth = await shipTimeChartering.checkCurrentContractMonth()
 
@@ -1156,7 +1447,7 @@ describe("ShipTimeCharteringGeneric", () => {
       await shipTimeChartering.requestHaversineDistance('10','10', '-20', '-20');
 
       const oracleData = await shipTimeChartering.oracleData();
-      const lastDistanceCalculation = oracleData.lastDistanceCalculation;
+      const lastDistanceCalculation = oracleData.lastDistanceCalculation.value;
 
       expect(lastDistanceCalculation).to.equal(49670305761772860n);
     })
@@ -1165,4 +1456,33 @@ describe("ShipTimeCharteringGeneric", () => {
 
 //MELHORIAS:
   // PEGAR TAMANHO DAS ONDAS
-  // PEGAR VELOCIDADE DA CORRENTE MARÍTIMA
+
+  // it("Should ship operation be off hire to close contract", async() => {
+
+  // })
+
+  // it("Should not close contract if ship is not off hire", async() => {
+    
+  // })
+
+  // it("Should charter pay any amount due before close the contract", async() => {
+  //   //PRIMEIRO DEFINIR COMO SERA ACUMULADO ESSE VALOR DEVIDO!
+  // })
+
+  // it("Should not allow to close the charter if there is an open dispute", async function () {
+  //   // await shipTimeChartering.connect(charterer).startCharter(1);
+    
+  //   // CRIAR FUNÇÃO DE ABRIR UMA DISPUTA PRIMEIRO PARA PODER TESTAR
+
+  //   // await expect(
+  //   //   shipTimeCharteringGeneric.connect(charterer).closeCharter()
+  //   // ).to.be.revertedWith("Charter cannot be closed if there's some dispute opened");
+  // });
+
+  // it("Should close if all oil consuption are equal to oil supply", async() => {
+
+  // })
+
+  // it("Should discount from amount due the diference between oil supply and oil consuption, if it's positive", async() => {
+  //   //passr valor do oleo como parametro
+  // })
