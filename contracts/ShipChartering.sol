@@ -98,13 +98,17 @@ contract ShipTimeCharteringGeneric is Initializable {
         OperationStatus operationStatus;
     }    
     struct ChainLinkData {
-        uint priceMatic;
+        PriceMatic priceMatic;
         LastDistanceCalculation lastDistanceCalculation;
         uint lastWindSpeed;
         uint lastCrudeOilPrice;
         uint firstCrudeOilPrice;
     }
     struct LastDistanceCalculation {
+        uint value;
+        uint lastUpdate;
+    }
+    struct PriceMatic {
         uint value;
         uint lastUpdate;
     }
@@ -124,6 +128,7 @@ contract ShipTimeCharteringGeneric is Initializable {
     event HaversineDistance(uint haversineDistance);
     event FirstCrudeOilPrice(uint price);
     event BadWeather(string latitude, string longitude);
+    event Payment(uint valueToShipOwner, uint valueToChaintering, uint timestamp);
 
     constructor(
         address payable _shipOwner,
@@ -197,9 +202,9 @@ contract ShipTimeCharteringGeneric is Initializable {
         OperationStatus operationCode ) external {
         require(msg.sender == parties.shipOwner, "Only ship owner can report vessel operation");
         
-        uint timesDiference = block.timestamp - contractValues.charterPerHour.lastUpdate;
-        uint dayInMilliseconds = 900; // 15 * 60
-        require(timesDiference < dayInMilliseconds, "Distance must be calculated, maximum 15 minutes before report, call requestHaversineDistance()");
+        uint timesDiference = block.timestamp - oracleData.lastDistanceCalculation.lastUpdate;
+        uint fifteenMinutes = 900; // 15 * 60
+        require(timesDiference < fifteenMinutes, "Distance must be calculated, maximum 15 minutes before report, call requestHaversineDistance()");
 
         VesselReport memory vesselReport;  
 
@@ -288,8 +293,8 @@ contract ShipTimeCharteringGeneric is Initializable {
     function addAmountDueOperation (uint operationHoursDuration) public returns (uint256) {
          //check last crude oil price update
         uint timesDiference = block.timestamp - contractValues.charterPerHour.lastUpdate;
-        uint dayInMilliseconds = 86400; // 24 * 60 * 60
-        require(timesDiference < dayInMilliseconds, "Crude oil price must be updated, maximum 24 hours before payment, call requestCrudeOilPrice()");
+        uint dayInSeconds = 86400; // 24 * 60 * 60
+        require(timesDiference < dayInSeconds, "Crude oil price must be updated, maximum 24 hours before payment, call requestCrudeOilPrice()");
         uint256 amountDueOperation = contractValues.charterPerHour.price * operationHoursDuration;
         addDueAmount(amountDueOperation);
         return amountDueOperation;
@@ -342,6 +347,32 @@ contract ShipTimeCharteringGeneric is Initializable {
             penalty;
 
         return totalAmountDue;
+    }
+
+    function convertAmountDueToMatic() public view returns (uint convertedAmountValue) {
+        uint totalAmount = totalAmountDueToPay();
+        return convertDolarToMatic(totalAmount);
+    }
+
+    function calculateValueToChainteringService(uint value) public view returns (uint valueToChaintering) {
+        uint valueMul = value * contractValues.chainteringServicePayPerHour;
+        uint valueDiv = valueMul.div(contractValues.charterPerHour.price);
+        return  valueDiv;
+    }
+
+    function payAmountDue() external payable {
+        uint convertedAmountValue = convertAmountDueToMatic();
+        require(msg.value >= convertedAmountValue, "Deposit amount due value");
+        
+        uint valueToChaintering = calculateValueToChainteringService(convertedAmountValue);
+        (bool sentChaintering, ) = parties.chainteringService.call{value: valueToChaintering}("");
+        require(sentChaintering, "Failed to send amount due ChainteringService");
+        
+        uint valueToShipOwner = msg.value - valueToChaintering;
+        (bool sentShipOwner, ) = parties.shipOwner.call{value: valueToShipOwner}("");
+        require(sentShipOwner, "Failed to send amount due ship owner");
+
+        emit Payment(valueToShipOwner, valueToChaintering, block.timestamp);
     }
 
     function avarageSpeed( uint256 operationHoursDuration ) view public returns (uint256 _avaraSpeed) {
@@ -444,6 +475,8 @@ contract ShipTimeCharteringGeneric is Initializable {
 
         if (!thisArbiterAlreadyVoted) {
             allDisputes[disputeId].arbitersVoted.push(msg.sender);
+        } else {
+            revert("Arbiter already voted");
         }
 
         emit ArbiterVote(disputeId, isReasonable, msg.sender);
@@ -530,8 +563,17 @@ contract ShipTimeCharteringGeneric is Initializable {
     }
 
     function saveLastMaticPrice(int price) public {
-        oracleData.priceMatic = uint(price);
-        emit MaticPrice(oracleData.priceMatic);
+        oracleData.priceMatic.value = uint(price);
+        oracleData.priceMatic.lastUpdate = block.timestamp;
+        emit MaticPrice(oracleData.priceMatic.value);
+    }
+
+    function convertDolarToMatic(uint value) public view returns (uint valueConverted) {
+        uint timesDiference = block.timestamp - oracleData.priceMatic.lastUpdate;
+        uint fifteenMinutes = 900; // 15 * 60
+        require(timesDiference < fifteenMinutes, "Matic price must be requested, maximum 15 minutes before convert, call requestLatestMaticPrice()");
+        uint total = value * oracleData.priceMatic.value;
+        return total / 100000000;
     }
 
     function requestHaversineDistance( 

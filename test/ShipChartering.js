@@ -48,7 +48,7 @@ describe("ShipTimeCharteringGeneric", () => {
     //function call after deploy to finish the contract variable set up, due the 'Stack too deep' it can't be done in constructor.
     await shipTimeChartering.setUpContract(
       1000, // charterPerHour
-      75, // chainteringServicePayPerHour
+      3, // chainteringServicePayPerHour
       12, // minimumCruisingSpeed
       9751779, // vesselIMOnumber
       20, // penaltyPerHour
@@ -94,7 +94,7 @@ describe("ShipTimeCharteringGeneric", () => {
       const minimumCruisingSpeed = vesselData[1];
   
       expect(charterPerHour.price).to.equal(1000);
-      expect(chainteringServicePayPerHour).to.equal(75);
+      expect(chainteringServicePayPerHour).to.equal(3);
       expect(earlyCancellationPenaltyPerHour).to.equal(20);
       expect(vesselIMOnumber).to.equal(9751779);
       expect(minimumCruisingSpeed).to.equal(12);
@@ -146,6 +146,25 @@ describe("ShipTimeCharteringGeneric", () => {
       await expect(
         shipTimeChartering.connect(shipOwner).startCharter(3)
       ).to.be.revertedWith("Only charterer can start the charter ship");
+    })
+
+    it("Shouldn't start if contract isn't set up", async() => {
+      const ShipTimeCharteringWithoutSetUp = await ethers.getContractFactory("ShipTimeCharteringGeneric");
+      const shipTimeCharteringWithoutSetUp = await ShipTimeCharteringWithoutSetUp.deploy(
+        shipOwner.address,
+        charterer.address,
+        arbiter_1.address,
+        arbiter_2.address,
+        arbiter_3.address,
+        chainteringService.address,
+        truflationAddress,
+        priceMaticAddress
+      );
+      await shipTimeCharteringWithoutSetUp.deployed(); 
+
+      await expect(
+        shipTimeCharteringWithoutSetUp.connect(charterer).startCharter(3)
+      ).to.be.revertedWith("Contract must be set up, before start");
     })
   })
 
@@ -229,6 +248,30 @@ describe("ShipTimeCharteringGeneric", () => {
         contractDeployWithoutStart.connect(charterer).closeCharter()
       ).to.be.revertedWith("Charter cannot be closed if it not started");
     });
+
+    it("Should revert if charterer try to close contract with open disputes", async() => {      
+      const contractTimes = await shipTimeChartering.contractTimes();
+
+      const startTime = parseInt(contractTimes[0]);
+      const endTime = startTime + (10 * 3600); //10 hours voyage
+
+      await shipTimeChartering.createDispute(
+        startTime,
+        endTime,
+        "Not bad weather, as reported", //reason
+        10000, //value
+        1 // charterer open this dispute
+      );
+
+      const endDateTime = parseInt(contractTimes[1]);
+      await ethers.provider.send("evm_mine", [endDateTime]);
+      
+      await expect(
+        shipTimeChartering
+          .connect(charterer)
+          .closeCharter()
+      ).to.be.revertedWith("Charter cannot be closed if there's some dispute opened") 
+    })
   })
 
   describe("Disputes", async() => {
@@ -342,6 +385,37 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events[0].args.disputeId).to.equal(1);
       expect(events[0].args.isReasonable).to.equal(true);
       expect(events[0].args.arbiter).to.equal(arbiter_1.address);
+    })
+
+    it("It should revert if arbiter already voted", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const startTime = parseInt(contractTimes[0]);
+
+      //first open dispute
+      await shipTimeChartering.createDispute(
+        startTime,
+        startTime + (10 * 3600), //10 hours voyage
+        "Not bad weather, as reported", //reason
+        10000, //value
+        1 // charterer open this dispute
+      );
+
+      //judge dispute
+      await shipTimeChartering
+              .connect(arbiter_1)
+              .judgeDispute(
+                1, //dispute id
+                true //is reasonable
+              )
+
+      await expect(
+        shipTimeChartering
+              .connect(arbiter_1)
+              .judgeDispute(
+                1, //dispute id
+                true //is reasonable
+              )
+        ).to.be.revertedWith("Arbiter already voted")
     })
     
     it("Should be closed after all three arbiters judge", async() => {
@@ -714,6 +788,13 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(avarageSpeed).to.equal(12)
     })
 
+    it("Should reverted calculate avarage speed, if not request Haversine distance before", async() => {
+      await expect(
+        shipTimeChartering
+          .avarageSpeed(210)
+        ).to.be.revertedWith("Should calculate a distance first, call requestHaversineDistance()");
+    })
+
     it("Should emit a BelowContractualSpeed event if contract minimum speed was NOT reached", async() => {
       await shipTimeChartering.requestHaversineDistance('10', '10', '-20', '-20');
       //write new ship operation report
@@ -748,6 +829,7 @@ describe("ShipTimeCharteringGeneric", () => {
     })
 
     it("Should check if contract minimum speed was reached, only if vessel was under way", async() => {
+      await shipTimeChartering.requestHaversineDistance('18', '18', '18', '18');
       //write new ship operation report
       const contractTimes = await shipTimeChartering.contractTimes();
       const startDateTime = parseInt(contractTimes[0]);
@@ -789,6 +871,15 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(events.length).to.equal(1);
       expect(events[0].args.latitude).to.equal('10');
       expect(events[0].args.longitude).to.equal('10');
+    })
+
+
+    it("Should revert if other party, than ship owner, try to inform bad weather condition", async() => {
+      await expect(
+        shipTimeChartering
+          .connect(charterer)
+          .informBadWeather('10','10')
+        ).to.be.revertedWith("Only ship owner can inform vessel under bad weather conditions");
     })
 
     it("Should check broadcast data if ship owner report bad weather condition", async() => {
@@ -1104,6 +1195,38 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(amountDueAfter - amountDueBefore).to.equal(210000);
     })
 
+    it("Should revert add amount due ship owner for operation time, if didn't request crude before", async() => {
+      const contractTimes = await shipTimeChartering.contractTimes();
+      const firstMonthTime = parseInt(contractTimes[0]) + 45 * 24 * 60 * 60 ;
+      await ethers.provider.send("evm_mine", [firstMonthTime]);
+      
+      //write new ship operation report
+      const dateDeparture = firstMonthTime; 
+      const dateArrival = dateDeparture + (210 * 3600); //210 hours voyage
+      const latitudeDeparture = 10;
+      const longitudeDerparture = 10;
+      const latitudeArrival = -20;
+      const longitudeArrival = -20; //about 2530 nautical miles
+      
+      await ethers.provider.send("evm_mine", [dateArrival]);
+      await shipTimeChartering.requestHaversineDistance('10', '10', '-20', '-20');
+
+      await expect(
+        shipTimeChartering
+          .connect(shipOwner)
+          .newOperationReport(
+            dateDeparture,
+            dateArrival,
+            ethers.utils.parseUnits(String(latitudeDeparture), 18),
+            ethers.utils.parseUnits(String(longitudeDerparture), 18),
+            ethers.utils.parseUnits(String(latitudeArrival), 18),
+            ethers.utils.parseUnits(String(longitudeArrival), 18),
+            4000, // oil consuption per operation, 
+            2 // operation code for under way
+          )
+        ).to.be.revertedWith("Crude oil price must be updated, maximum 24 hours before payment, call requestCrudeOilPrice()");
+    })
+
     it("Should revert if ship owner not calculate distance using requestHaversineDistance method", async() => {
       const contractTimes = await shipTimeChartering.contractTimes();
       const twoDaysAfterStart = parseInt(contractTimes[0]) + 2 * 24 * 60 * 60 * 1000 ;
@@ -1258,16 +1381,73 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(totalAmount).to.equal(30400)
     })
 
-    it("Should convert Dolar contract values to Matic", async() => {
-      
+    it("Should convert amount due value to Matic", async() => {
+      //Add 10000 amount due first month, in time, so without penalty
+      await shipTimeChartering.addDueAmount(10000);      
+      await shipTimeChartering.requestLatestMaticPrice();
+      const convertedAmountValue = await shipTimeChartering.convertAmountDueToMatic();
+      expect(convertedAmountValue).to.equal(8799);
     })
     
     it("Should pay Ship Owner service when deposit amount", async() => {
-  
+      await shipTimeChartering.addDueAmount(10000);      
+      await shipTimeChartering.requestLatestMaticPrice();
+      
+      const contractBalanceBefore = await ethers.provider.getBalance(shipOwner.address)
+      
+      await shipTimeChartering.connect(charterer).payAmountDue({ value: 8799 });
+      
+      const contractBalanceAfter = await ethers.provider.getBalance(shipOwner.address)
+
+      const balanceDiference = BigInt(contractBalanceAfter) - BigInt(contractBalanceBefore)
+      
+      expect(balanceDiference).to.equal(8773);
+    })
+
+    it("Calculate value to chaintering service", async() => {
+      const valueToChaintering = await shipTimeChartering.calculateValueToChainteringService(1000);
+      expect(valueToChaintering).to.equal(3);
     })
 
     it("Should pay Chaintering service when deposit amount", async() => {
-  
+      await shipTimeChartering.addDueAmount(10000);      
+      await shipTimeChartering.requestLatestMaticPrice();
+      
+      const contractBalanceBefore = await ethers.provider.getBalance(chainteringService.address)
+      
+      await shipTimeChartering.connect(charterer).payAmountDue({ value: 8799 });
+      
+      const contractBalanceAfter = await ethers.provider.getBalance(chainteringService.address)
+
+      const balanceDiference = BigInt(contractBalanceAfter) - BigInt(contractBalanceBefore)
+      
+      expect(balanceDiference).to.equal(26);
+    })
+
+    it("Should emit Payment event when deposit amount", async() => {
+      await shipTimeChartering.addDueAmount(10000);      
+      await shipTimeChartering.requestLatestMaticPrice();
+
+      await shipTimeChartering.connect(charterer).payAmountDue({ value: 8799 });
+
+      const filter = shipTimeChartering.filters.Payment();
+      const events = await shipTimeChartering.queryFilter(filter);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.valueToShipOwner).to.equal(8773);
+      expect(events[0].args.valueToChaintering).to.equal(26);
+    })
+
+    it("Should revert payment, if message value is less than amount due", async() => {
+      await shipTimeChartering.addDueAmount(10000);      
+      await shipTimeChartering.requestLatestMaticPrice();
+
+      await expect(
+        shipTimeChartering
+          .connect(charterer)
+          .payAmountDue({ value: 8798 })
+        ).to.be.revertedWith("Deposit amount due value");
+      
+
     })
   })
 
@@ -1370,13 +1550,18 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(charterPerHour).to.equal(1025);
     })
 
-    it("Should get Matic / Dolar cotation", async() => {
+    it("Should convert any value in Dolar to Matic", async() => {
       await shipTimeChartering.requestLatestMaticPrice();
 
-      const oracleData = await shipTimeChartering.oracleData();
-      const maticPrice = oracleData.priceMatic;
+      const valueConverted = await shipTimeChartering.convertDolarToMatic(1000);
 
-      expect(maticPrice).to.equal(87992557);
+      expect(valueConverted).to.equal(879);
+    })
+
+    it("Should revert, if try to convert value, without get the updated Matic price", async() => {
+      await expect(
+        shipTimeChartering.convertDolarToMatic(1000)
+      ).to.be.revertedWith("Matic price must be requested, maximum 15 minutes before convert, call requestLatestMaticPrice()");
     })
 
     it("Should get wind speed by latitude and longitute", async() => {
