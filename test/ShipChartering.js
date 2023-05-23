@@ -1195,7 +1195,7 @@ describe("ShipTimeCharteringGeneric", () => {
       expect(amountDueAfter - amountDueBefore).to.equal(210000);
     })
 
-    it("Should revert add amount due ship owner for operation time, if didn't request crude before", async() => {
+    it("Should revert add amount due ship owner for operation time, if didn't request crude oil price before", async() => {
       const contractTimes = await shipTimeChartering.contractTimes();
       const firstMonthTime = parseInt(contractTimes[0]) + 45 * 24 * 60 * 60 ;
       await ethers.provider.send("evm_mine", [firstMonthTime]);
@@ -1638,36 +1638,3 @@ describe("ShipTimeCharteringGeneric", () => {
     })
   })
 });
-
-//MELHORIAS:
-  // PEGAR TAMANHO DAS ONDAS
-
-  // it("Should ship operation be off hire to close contract", async() => {
-
-  // })
-
-  // it("Should not close contract if ship is not off hire", async() => {
-    
-  // })
-
-  // it("Should charter pay any amount due before close the contract", async() => {
-  //   //PRIMEIRO DEFINIR COMO SERA ACUMULADO ESSE VALOR DEVIDO!
-  // })
-
-  // it("Should not allow to close the charter if there is an open dispute", async function () {
-  //   // await shipTimeChartering.connect(charterer).startCharter(1);
-    
-  //   // CRIAR FUNÇÃO DE ABRIR UMA DISPUTA PRIMEIRO PARA PODER TESTAR
-
-  //   // await expect(
-  //   //   shipTimeCharteringGeneric.connect(charterer).closeCharter()
-  //   // ).to.be.revertedWith("Charter cannot be closed if there's some dispute opened");
-  // });
-
-  // it("Should close if all oil consuption are equal to oil supply", async() => {
-
-  // })
-
-  // it("Should discount from amount due the diference between oil supply and oil consuption, if it's positive", async() => {
-  //   //passr valor do oleo como parametro
-  // })
