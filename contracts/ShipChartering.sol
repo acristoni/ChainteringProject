@@ -640,4 +640,3 @@ contract ShipTimeCharteringGeneric is Initializable {
         }
     }
 }
-
