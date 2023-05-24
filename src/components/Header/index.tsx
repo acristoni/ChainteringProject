@@ -29,6 +29,7 @@ export default function Header() {
                 align="center"
                 p={3}
                 shadow="2xl"
+                position={!isMobile ? "fixed" : "inherit"}
             >
                 {
                     isMobile ?
