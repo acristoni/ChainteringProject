@@ -16,6 +16,7 @@ export default function MainBanner() {
             <Logo main/>
             <HStack
                 w={['85%', '85%', '85%', '85%', '40%']}
+                pt={7}
             >
                 <Text
                     fontFamily="EB Garamond"

@@ -69,10 +69,11 @@ export default function Header() {
                             <Logo />
                         </HStack>
                         <HStack>
-                            <ButtonHeader 
+                            {/* <ButtonHeader 
                                 title="Documentation" 
-                                href="/documentation"
-                            />
+                                // href="/documentation"
+                                onClick={()=>console.log("eita asuqeis")}
+                            /> */}
                             <AvatarConnectWallet 
                                 avatarName={avatarName} 
                                 onOpen={onOpen}                

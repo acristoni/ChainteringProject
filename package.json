@@ -23,18 +23,24 @@
     "@types/node": "18.16.3",
     "@types/react": "18.2.0",
     "@types/react-dom": "18.2.1",
+    "axios": "^1.4.0",
     "dotenv": "^16.0.3",
     "eslint": "8.39.0",
     "eslint-config-next": "13.3.4",
+    "ethers": "^5.7.2",
     "framer-motion": "^10.12.14",
     "hardhat": "^2.14.0",
+    "mongodb": "^5.5.0",
+    "mongoose": "^7.2.1",
     "next": "13.3.4",
     "prb-math": "^2.4.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "swr": "^2.1.5",
     "typescript": "5.0.4"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^2.0.2"
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@types/mongodb": "^4.0.7"
   }
 }
