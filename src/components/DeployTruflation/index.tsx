@@ -1,11 +1,18 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { VStack, Text, Box, Spinner } from "@chakra-ui/react";
 import Button from "../Button";
 import truflation from "../../../artifacts/contracts/Truflation.sol/Truflation.json"
 import deployContract from "@/utils/deployContract";
 
 export default function DeployTruflation({ setStep }: { setStep: (value: number) => void }) {
+    const truflationContractAddress = useRef(sessionStorage.getItem("@TRUFLATION"))
     const [isLoading, setisLoading] = useState<boolean>(false)
+
+    useEffect(()=>{
+        if (truflationContractAddress.current && truflationContractAddress.current.length) {
+            setStep(2)
+        }
+    },[truflationContractAddress.current])
 
     const deployTruflationContract = async() => {
         setisLoading(true)

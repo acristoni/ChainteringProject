@@ -1,11 +1,18 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { VStack, Text, Box, Spinner } from "@chakra-ui/react";
 import Button from "../Button";
 import priceMatic from "../../../artifacts/contracts/PriceMaticUSD.sol/PriceMaticUSD.json"
 import deployContract from "@/utils/deployContract";
 
 export default function DeployPriceMatic({ setStep }: { setStep: (value: number) => void }) {
+    const maticContractAddress = useRef(sessionStorage.getItem("@MATIC_CONTRACT"))
     const [isLoading, setisLoading] = useState<boolean>(false)
+
+    useEffect(()=>{
+        if (maticContractAddress.current && maticContractAddress.current.length) {
+            setStep(3)
+        }
+    },[maticContractAddress.current])
 
     const deployPriceMaticUSDContract = async() => {
         setisLoading(true)

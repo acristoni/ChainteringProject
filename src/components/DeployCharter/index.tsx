@@ -1,11 +1,14 @@
+import { useEffect, useState, useRef } from "react";
 import { Parties } from "@/interfaces/Parties.interface";
 import { VStack, Text, Input, Box, Spinner } from "@chakra-ui/react";
-import { useState } from "react";
 import Button from "../Button";
 import shipCharter from "../../../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json"
 import deployContract from "@/utils/deployContract";
+import newCharter from "@/services/newCharter";
 
 export default function DeployCharter({ setStep }: { setStep: (value: number) => void }) {
+    const role = useRef(sessionStorage.getItem("@ROLE"))
+    const userAddress = useRef(sessionStorage.getItem("@WALLET"))
     const [isLoading, setisLoading] = useState<boolean>(false)
     const [contractParties, setContractParties] = useState<Parties>({
         shipOwner: '',
@@ -14,6 +17,20 @@ export default function DeployCharter({ setStep }: { setStep: (value: number) =>
         arbiter_2: '',
         arbiter_3: ''
     })
+
+    useEffect(()=>{
+        if (role.current && userAddress.current) {
+            if (role.current === "SHIPOWNER") {
+                setContractParties({ ...contractParties, shipOwner: userAddress.current })
+            }
+            if (role.current === "CHARTERER") {
+                setContractParties({ ...contractParties, charterer: userAddress.current })
+            }
+            if (role.current === "ARBITER") {
+                setContractParties({ ...contractParties, arbiter_2: userAddress.current })
+            }
+        }
+    },[role.current])
 
     const deployCharterContract = async() => {
         setisLoading(true)
@@ -29,12 +46,16 @@ export default function DeployCharter({ setStep }: { setStep: (value: number) =>
             truflationContractAddress,
             priceMAticContractAddress
         ]        
-        const response = await deployContract(shipCharter.bytecode, shipCharter.abi, contractArguments);
-        if (response) {
-            setStep(4)
-            sessionStorage.setItem("@NEWCHARTER", response);
-
-            setisLoading(false)
+        const addressNewCharterContract = await deployContract(shipCharter.bytecode, shipCharter.abi, contractArguments);
+        if (addressNewCharterContract) {
+            sessionStorage.setItem("@NEWCHARTER", addressNewCharterContract);
+            const reponseNewCharterBD = await newCharter(contractParties, addressNewCharterContract)
+            if (reponseNewCharterBD.success) {
+                setisLoading(false)
+                setStep(4)
+            } else {
+                alert("We encountered an issue while trying to save new contract on our data base. Please contact us for assistance.")
+            }
         } else {
             setisLoading(false)
             alert("We encountered an issue while trying to deploy your contract. Please try again later or contact us for assistance.")
@@ -79,6 +100,7 @@ export default function DeployCharter({ setStep }: { setStep: (value: number) =>
                         placeholder='Ship Owner public wallet address' 
                         value={contractParties.shipOwner}
                         onChange={e=>setContractParties({...contractParties, shipOwner:e.target.value})}
+                        isDisabled={role.current === "SHIPOWNER"}
                     />
                     <Text pt={4}>
                         Charterer public wallet address
@@ -87,6 +109,7 @@ export default function DeployCharter({ setStep }: { setStep: (value: number) =>
                         placeholder='Charterer public wallet address' 
                         value={contractParties.charterer}
                         onChange={e=>setContractParties({...contractParties, charterer:e.target.value})}
+                        isDisabled={role.current === "CHARTERER"}
                     />
                     <Text pt={4}>
                         First arbiter public wallet address
@@ -95,6 +118,7 @@ export default function DeployCharter({ setStep }: { setStep: (value: number) =>
                         placeholder='First arbiter wallet address' 
                         value={contractParties.arbiter_1}
                         onChange={e=>setContractParties({...contractParties, arbiter_1:e.target.value})}
+                        isDisabled={role.current === "ARBITER"}
                     />
                     <Text pt={4}>
                         Second arbiter public wallet address
