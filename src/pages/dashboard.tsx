@@ -1,28 +1,60 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { VStack, useMediaQuery, Text } from "@chakra-ui/react";
 import Header from "../components/Header"
 import getContractByPartie from "@/services/getContractByPartie";
 import DeployNewContract from "@/components/DeployNewContract";
+import MainTextDashboard from "@/components/MainTextDashboard";
+import AllContracts from "@/components/AllContracts";
+import { ContractParties as IContractParties } from "../../interfaces/ContractParties.interface"
 
 export default function Dashboard() {
-  const [isMobile] = useMediaQuery('(max-width: 900px)')
+  const role = useRef(sessionStorage.getItem("@ROLE"))
   const [contractsAddresses, setContractAddresses] = useState<string[]>([])
+  const [mainText, setMainText] = useState<string>("")
+  const [userRole, setUserRole] = useState<string>("")
 
   useEffect(()=>{
-    const role = sessionStorage.getItem("@ROLE")
+    if (role.current) {
+      setUserRole(role.current)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[role.current])
+
+  useEffect(()=>{
     const wallet = sessionStorage.getItem("@WALLET")
-    if (role && wallet) {
+    if (userRole && userRole.length && wallet) {
       const getContracts = async() => {
-        const responseContracts = await getContractByPartie(role.toLowerCase(), wallet)
+        const responseContracts = await getContractByPartie(userRole.toLowerCase(), wallet)
         if (responseContracts && responseContracts.success) {
-          setContractAddresses(responseContracts.data)
+          const arrayContractAddresses: string[] = []
+          responseContracts.data.forEach((contract: IContractParties) => {
+            arrayContractAddresses.push(contract.contractAddress)
+          })
+          setContractAddresses(arrayContractAddresses)
+          if (responseContracts.data.length) {
+            switch (userRole) {
+              case 'SHIPOWNER':
+                setMainText("These are the charter contracts for the vessels owned by your company.")
+                break;
+              case 'CHARTERER':
+                setMainText("These are the charter contracts for the vessels your company is chartering.")
+                break;
+              case 'ARBITER':
+                setMainText("These are the charter party contracts in which you have been appointed as the arbitrator.")
+                break;
+              default:
+                break;
+            }
+          } else {
+            setMainText("It appears that you don't have a contract in our system. I invite you to start your first contract with us.")
+          }
         } else {
           alert("We were unable to retrieve your contracts. Please try again later or contact us for assistance.")
         }        
       }
       getContracts()
     }
-  },[])
+  },[userRole])
   
   return (
     <VStack 
@@ -34,31 +66,17 @@ export default function Dashboard() {
       <Header/>
       <VStack 
         pt={["5vh", "7vh", "10vh", "10vh", "10vh"]}
-        w="100%"
+        w="90%"
         h="100%"
         minH="100vh"
+        maxW="800px"
         align="center"
       >
+        <MainTextDashboard mainText={mainText}/>
         {
           contractsAddresses && contractsAddresses.length ?
-          <></> :
-          <>
-            <Text 
-              as='b'
-              fontSize={['xl','xl','2xl','2xl','2xl']}
-              style={{
-                margin: '50px'
-              }}
-              padding={5}
-              rounded="md"
-              boxShadow="base"
-              background="blue.800"
-              color="white"
-            >
-                It appears that you don&apos;t have a contract in our system. I invite you to start your first contract with us.
-            </Text>
-            <DeployNewContract />
-          </>
+          <AllContracts contractsAddresses={contractsAddresses}/> :
+          <DeployNewContract />          
         }
       </VStack>
     </VStack>

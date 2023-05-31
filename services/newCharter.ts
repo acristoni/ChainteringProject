@@ -4,12 +4,12 @@ import { Parties } from "@/interfaces/Parties.interface";
 export default async function newCharter(contractParties: Parties, addressNewCharterContract: string) {
     const body: BodyPostNewCharter = {
         contractAddress: addressNewCharterContract,
-        shipwonerAddress: contractParties.shipOwner,
-        chartererAddress: contractParties.charterer,
+        shipwonerAddress: contractParties.shipOwner.toLowerCase(),
+        chartererAddress: contractParties.charterer.toLowerCase(),
         arbitersAddresses: [
-            contractParties.arbiter_1,
-            contractParties.arbiter_2,
-            contractParties.arbiter_3
+            contractParties.arbiter_1.toLowerCase(),
+            contractParties.arbiter_2.toLowerCase(),
+            contractParties.arbiter_3.toLowerCase()
         ]
     }
 
