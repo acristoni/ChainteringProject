@@ -14,8 +14,11 @@ export default function Dashboard() {
     if (role && wallet) {
       const getContracts = async() => {
         const responseContracts = await getContractByPartie(role.toLowerCase(), wallet)
-        console.log("🚀 ~ file: dashboard.tsx:16 ~ getContracts ~ responseContracts:", responseContracts)
-        
+        if (responseContracts && responseContracts.success) {
+          setContractAddresses(responseContracts.data)
+        } else {
+          alert("We were unable to retrieve your contracts. Please try again later or contact us for assistance.")
+        }        
       }
       getContracts()
     }

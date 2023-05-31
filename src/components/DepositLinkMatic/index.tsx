@@ -1,20 +1,20 @@
 import { useState } from "react";
 import { VStack, Text, Box, Spinner } from "@chakra-ui/react";
 import Button from "../Button";
-import contractArtifact from "../../../artifacts/contracts/Truflation.sol/Truflation.json"
+import contractArtifact from "../../../artifacts/contracts/PriceMaticUSD.sol/PriceMaticUSD.json"
 import depositLinkToken from "@/utils/depositLinkToken";
 
 export default function DepositLinkMatic({ setStep }: { setStep: (value: number) => void }) {
     const [isLoading, setisLoading] = useState<boolean>(false)
     
-    const depositLinkTokenInTruflation = async() => {
+    const depositLinkTokenInMatic = async() => {
         setisLoading(true)
-        const truflationContractAddress = sessionStorage.getItem("@TRUFLATION")
+        const maticContractAddress = sessionStorage.getItem("@MATIC_CONTRACT")
         const contractAbi = contractArtifact.abi
-        if (truflationContractAddress) {
-            const responseDeposit = await depositLinkToken(truflationContractAddress, contractAbi);
+        if (maticContractAddress) {
+            const responseDeposit = await depositLinkToken(maticContractAddress, contractAbi);
             if (responseDeposit && responseDeposit.hash && responseDeposit.hash.length) {
-                setStep(7)
+                setStep(9)
                 setisLoading(false)
             } else {
                 setisLoading(false)
@@ -53,11 +53,11 @@ export default function DepositLinkMatic({ setStep }: { setStep: (value: number)
                         as='b'
                         fontSize={['xl','xl','2xl','2xl','2xl']}
                     >
-                        We are almost finished. Now, please proceed with depositing 1 LINK token into the recently connected contract. This token will serve as payment for each query of your real-world data charter contract.
+                        Last step. Now, please proceed with depositing 1 LINK token into the recently connected contract. This token will serve as payment for each query to update Matic/USD price.
                     </Text>
                     <Box pt={5}>
                         <Button
-                            onClick={depositLinkTokenInTruflation}
+                            onClick={depositLinkTokenInMatic}
                         >
                             <Text>
                                 Deposit Link Token

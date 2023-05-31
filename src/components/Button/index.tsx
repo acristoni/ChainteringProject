@@ -4,11 +4,13 @@ import { ReactElement } from "react";
 interface Props extends ChakraProps {
     children: ReactElement,
     onClick: ()=>void
+    isLoading?: boolean
 }
 
-export default function Button ({ children, onClick }: Props) {
+export default function Button ({ children, onClick, isLoading }: Props) {
 
     return <ButtonChakra
+        isLoading={isLoading}
         bg="blue.800"
         color="white"
         onClick={onClick}

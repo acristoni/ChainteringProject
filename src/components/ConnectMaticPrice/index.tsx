@@ -15,7 +15,7 @@ export default function ConnectMaticPrice({ setStep }: { setStep: (value: number
         if (maticContractAddress && charterContractAddress) {
             const responseConnect = await connectToShipChartering(maticContractAddress, charterContractAddress, contractAbi);
             if (responseConnect && responseConnect.hash && responseConnect.hash.length) {
-                setStep(6)
+                setStep(8)
                 setisLoading(false)
             } else {
                 setisLoading(false)
@@ -39,7 +39,7 @@ export default function ConnectMaticPrice({ setStep }: { setStep: (value: number
                         as='b'
                         fontSize={['xl','xl','2xl','2xl','2xl']}
                     >
-                        We are currently working on connect your contract, with most real-world data, with your vessel charter agreement.    
+                        We are currently working on connect your contract, with price Matic/USD, with your vessel charter agreement.    
                     </Text>
                     <Spinner
                         thickness='4px'

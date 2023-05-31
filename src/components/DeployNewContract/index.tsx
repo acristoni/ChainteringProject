@@ -8,6 +8,7 @@ import ConnectTruflation from "../ConnectTruflation";
 import DepositLinkTruflation from "../DepositLinkTruflation";
 import ConnectMaticPrice from "../ConnectMaticPrice";
 import DepositLinkMatic from "../DepositLinkMatic";
+import FinishNewContract from "../FinishNewContract";
 
 export default function DeployNewContract() {
     const [step, setStep] = useState<number>(1) //1-truflation contract, 2-price matic dolar, 3-ship charter contract, 4-setup contract
@@ -29,8 +30,10 @@ export default function DeployNewContract() {
                 <DepositLinkTruflation setStep={setStep} /> :
                 step === 7 ? 
                 <ConnectMaticPrice setStep={setStep} /> :
-                step === 8 &&
-                <DepositLinkMatic setStep={setStep} />
+                step === 8 ?
+                <DepositLinkMatic setStep={setStep} /> :
+                step === 9 &&
+                <FinishNewContract />
             }
         </Box>
     )
