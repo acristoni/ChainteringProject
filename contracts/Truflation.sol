@@ -32,7 +32,7 @@ contract Truflation is ChainlinkClient, ConfirmedOwner {
         fee = 10000000000000000; // 0,1 * 10**18 (Varies by network and job)
     }
 
-    function conectToShipChartering(address _contractShipChartering) public {
+    function connectToShipChartering(address _contractShipChartering) public {
         contractShipChartering = ShipTimeCharteringGeneric(_contractShipChartering);
         emit ShipCharteringConnected(_contractShipChartering);
     }

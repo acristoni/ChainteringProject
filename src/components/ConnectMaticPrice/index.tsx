@@ -4,7 +4,7 @@ import Button from "../Button";
 import connectToShipChartering from "@/utils/connectToShipChartering";
 import contractArtifact from "../../../artifacts/contracts/Truflation.sol/Truflation.json"
 
-export default function ConnectTruflation({ setStep }: { setStep: (value: number) => void }) {
+export default function ConnectMaticPrice({ setStep }: { setStep: (value: number) => void }) {
     const [isLoading, setisLoading] = useState<boolean>(false)
     
     const connectTruflationContract = async() => {

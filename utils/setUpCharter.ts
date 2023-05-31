@@ -3,18 +3,18 @@ import contractArtifact from '../artifacts/contracts/ShipChartering.sol/ShipTime
 import { SetUpCharterData } from '@/interfaces/SetUpCharterData.interface';
 
 export default async function setUpCharter(
-  contratoAddress: string, 
+  contractAddress: string, 
   setUpCharterData: SetUpCharterData): Promise<ethers.providers.TransactionResponse> {
-  const contratABI: any[] = contractArtifact.abi
+  const contractABI: any[] = contractArtifact.abi
 
   if (typeof window.ethereum !== 'undefined') {
     await window.ethereum.enable();
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     
     const signer = provider.getSigner();
-    const charterContrat = new ethers.Contract(contratoAddress, contratABI, signer);
+    const charterContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-    return charterContrat.setUpContract(
+    return charterContract.setUpContract(
       setUpCharterData.charterPerHour,
       setUpCharterData.chainteringServicePayPerHour,
       setUpCharterData.minimumCruisingSpeed,

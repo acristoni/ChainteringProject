@@ -57,8 +57,8 @@ describe("ShipTimeCharteringGeneric", () => {
       20, // consuptionUnderWay
     );
     
-    await truflationContract.conectToShipChartering(shipTimeCharteringAddress);
-    await maticPriceContract.conectToShipChartering(shipTimeCharteringAddress);
+    await truflationContract.connectToShipChartering(shipTimeCharteringAddress);
+    await maticPriceContract.connectToShipChartering(shipTimeCharteringAddress);
 
     //Start 3 month contract
     await shipTimeChartering.connect(charterer).startCharter(3);
@@ -959,8 +959,8 @@ describe("ShipTimeCharteringGeneric", () => {
         20, // consuptionUnderWay
       );
     
-      await truflationContract.conectToShipChartering(shipTimeCharteringAddress);
-      await maticPriceContract.conectToShipChartering(shipTimeCharteringAddress);
+      await truflationContract.connectToShipChartering(shipTimeCharteringAddress);
+      await maticPriceContract.connectToShipChartering(shipTimeCharteringAddress);
 
       //Start 3 month contract
       await shipTimeCharteringBadWeather.connect(charterer).startCharter(3);
@@ -1030,8 +1030,8 @@ describe("ShipTimeCharteringGeneric", () => {
         20, // consuptionUnderWay
       );
     
-      await truflationContract.conectToShipChartering(shipTimeCharteringAddress);
-      await maticPriceContract.conectToShipChartering(shipTimeCharteringAddress);
+      await truflationContract.connectToShipChartering(shipTimeCharteringAddress);
+      await maticPriceContract.connectToShipChartering(shipTimeCharteringAddress);
 
       //Start 3 month contract
       await shipTimeCharteringBadWeather.connect(charterer).startCharter(3);
@@ -1610,8 +1610,8 @@ describe("ShipTimeCharteringGeneric", () => {
         20, // consuptionUnderWay
       );
     
-      await truflationContract.conectToShipChartering(shipTimeCharteringAddress);
-      await maticPriceContract.conectToShipChartering(shipTimeCharteringAddress);
+      await truflationContract.connectToShipChartering(shipTimeCharteringAddress);
+      await maticPriceContract.connectToShipChartering(shipTimeCharteringAddress);
 
       //Start 3 month contract
       await shipTimeCharteringBadWeather.connect(charterer).startCharter(3);

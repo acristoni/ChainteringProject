@@ -22,7 +22,7 @@ contract PriceMaticUSD {
         );
     }
 
-    function conectToShipChartering(address _contractShipChartering) public {
+    function connectToShipChartering(address _contractShipChartering) public {
         contractShipChartering = ShipTimeCharteringGeneric(_contractShipChartering);
         emit ShipCharteringConnected(_contractShipChartering);
     }
