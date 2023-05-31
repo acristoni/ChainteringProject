@@ -1,28 +1,27 @@
 import { useState } from "react";
 import { VStack, Text, Box, Spinner } from "@chakra-ui/react";
 import Button from "../Button";
-import connectToShipChartering from "@/utils/connectToShipChartering";
 import contractArtifact from "../../../artifacts/contracts/Truflation.sol/Truflation.json"
+import depositLinkToken from "@/utils/depositLinkToken";
 
-export default function ConnectTruflation({ setStep }: { setStep: (value: number) => void }) {
+export default function DepositLinkMatic({ setStep }: { setStep: (value: number) => void }) {
     const [isLoading, setisLoading] = useState<boolean>(false)
     
-    const connectTruflationContract = async() => {
+    const depositLinkTokenInTruflation = async() => {
         setisLoading(true)
         const truflationContractAddress = sessionStorage.getItem("@TRUFLATION")
-        const charterContractAddress = sessionStorage.getItem("@NEWCHARTER")    
         const contractAbi = contractArtifact.abi
-        if (truflationContractAddress && charterContractAddress) {
-            const responseConnect = await connectToShipChartering(truflationContractAddress, charterContractAddress, contractAbi);
-            if (responseConnect && responseConnect.hash && responseConnect.hash.length) {
-                setStep(6)
+        if (truflationContractAddress) {
+            const responseDeposit = await depositLinkToken(truflationContractAddress, contractAbi);
+            if (responseDeposit && responseDeposit.hash && responseDeposit.hash.length) {
+                setStep(7)
                 setisLoading(false)
             } else {
                 setisLoading(false)
-                alert("We encountered an issue while trying to connect your contract. Please try again later or contact us for assistance.")
+                alert("We encountered an issue while trying to deposit LINK in your contract. Please try again later or contact us for assistance.")
             }
         } else {
-            alert("We didn't find any new contract to connect. Please try to start the process to create a new contract from beginning or contact us for assistance.")
+            alert("We didn't find any contract to deposit. Please try again later or contact us for assistance.")
         }
     }
 
@@ -39,7 +38,7 @@ export default function ConnectTruflation({ setStep }: { setStep: (value: number
                         as='b'
                         fontSize={['xl','xl','2xl','2xl','2xl']}
                     >
-                        We are currently working on connect your contract, with most real-world data, with your vessel charter agreement.    
+                        We are currently working on deposit LINK in your contract.
                     </Text>
                     <Spinner
                         thickness='4px'
@@ -54,14 +53,14 @@ export default function ConnectTruflation({ setStep }: { setStep: (value: number
                         as='b'
                         fontSize={['xl','xl','2xl','2xl','2xl']}
                     >
-                        Now we need to connect your contract,  with most real-world data, the price of a barrel of oil, the wind speed given a position, and the Haversine formula on the blockchain, with your vessel charter agreement.
+                        We are almost finished. Now, please proceed with depositing 1 LINK token into the recently connected contract. This token will serve as payment for each query of your real-world data charter contract.
                     </Text>
                     <Box pt={5}>
                         <Button
-                            onClick={connectTruflationContract}
+                            onClick={depositLinkTokenInTruflation}
                         >
                             <Text>
-                                Connect Truflation Contract
+                                Deposit Link Token
                             </Text>
                         </Button>
                     </Box>
