@@ -7,6 +7,7 @@ import deployContract from "@/utils/deployContract";
 import newCharter from "@/services/newCharter";
 
 export default function DeployCharter({ setStep }: { setStep: (value: number) => void }) {
+    const charterContractAddress = useRef(sessionStorage.getItem("@NEWCHARTER"))
     const role = useRef(sessionStorage.getItem("@ROLE"))
     const userAddress = useRef(sessionStorage.getItem("@WALLET"))
     const [isLoading, setisLoading] = useState<boolean>(false)
@@ -17,6 +18,12 @@ export default function DeployCharter({ setStep }: { setStep: (value: number) =>
         arbiter_2: '',
         arbiter_3: ''
     })
+
+    useEffect(()=>{
+        if (charterContractAddress.current && charterContractAddress.current.length) {
+            setStep(4)
+        }
+    },[charterContractAddress.current])
 
     useEffect(()=>{
         if (role.current && userAddress.current) {
@@ -91,7 +98,7 @@ export default function DeployCharter({ setStep }: { setStep: (value: number) =>
                         fontSize={['xl','xl','2xl','2xl','2xl']}
                         textAlign="center"
                     >
-                        One more step, Please fill out the form below to deploy a new ship charter contract.
+                        One more step, Please fill out the form below, with all parties involved in this charter agreement, to deploy a new ship charter contract.
                     </Text>
                     <Text pt={7}>
                         Ship Owner public wallet address
@@ -136,7 +143,7 @@ export default function DeployCharter({ setStep }: { setStep: (value: number) =>
                         value={contractParties.arbiter_3}
                         onChange={e=>setContractParties({...contractParties, arbiter_3:e.target.value})}
                     />
-                    <Box pt={5}>
+                    <Box py={5}>
                         <Button
                             onClick={deployCharterContract}
                         >
