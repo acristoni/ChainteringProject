@@ -4,4 +4,5 @@ export interface ResponseCheckStatus {
     IMOnumber: number;
     truflationContract: string;
     maticContract: string;
+    totalAmountDueToPay: number;
 }

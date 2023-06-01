@@ -38,12 +38,14 @@ export default async function checkContractStatus (contractAddress: string): Pro
 
     const truflationContract = await charterContract.contractTruflation()
     const maticContract = await charterContract.contractPriceMaticUSD()
+    const totalAmountDueToPay = await charterContract.totalAmountDueToPay()
 
     return {
       ...checkSetUp,
       isStated,
       truflationContract,
-      maticContract
+      maticContract,
+      totalAmountDueToPay
     }
   } else {
     console.error('Metamask is not installed or not connected.')
@@ -52,7 +54,8 @@ export default async function checkContractStatus (contractAddress: string): Pro
       IMOnumber: 0,
       isStated: false,
       truflationContract: "",
-      maticContract: ""
+      maticContract: "",
+      totalAmountDueToPay: 0
     }
   }
 }

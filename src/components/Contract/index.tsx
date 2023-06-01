@@ -22,7 +22,8 @@ export default function Contract({ contractAddress }: Props) {
         IMOnumber: 0,
         roleUser: '',
         truflationContract: '',
-        maticContract: ''
+        maticContract: '',
+        totalAmountDueToPay: 0
     })
 
     useEffect(()=>{
@@ -36,7 +37,8 @@ export default function Contract({ contractAddress }: Props) {
                         IMOnumber: responseStatus.IMOnumber,
                         roleUser: role.current,
                         truflationContract: responseStatus.truflationContract,
-                        maticContract: responseStatus.maticContract
+                        maticContract: responseStatus.maticContract,
+                        totalAmountDueToPay: responseStatus.totalAmountDueToPay
                     })
                 }
             }
