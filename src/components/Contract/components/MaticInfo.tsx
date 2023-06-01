@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { HStack, Text } from "@chakra-ui/react";
+import { HStack, Text, Spinner } from "@chakra-ui/react";
 import { ContractStatus } from "@/interfaces/ContractStatus.interface";
 import Button from "@/components/Button";
 import getLinkTokenBalance from "@/utils/getLinkTokenBalance";
@@ -10,6 +10,7 @@ export default function MaticInfo ({ contractStatus }: { contractStatus: Contrac
     const [maticBalance, setMaticBalance] = useState<number>(0)
     const [updateBalance, setUpdateBalance] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [isLoadingBalance, setIsLoadingBalance] = useState<boolean>(true)
     const contractAbi = contractArtifact.abi
 
     useEffect(()=>{
@@ -20,6 +21,7 @@ export default function MaticInfo ({ contractStatus }: { contractStatus: Contrac
                 if (responseBalance && responseBalance.length) {
                     setMaticBalance(parseFloat(responseBalance))
                 }
+                setIsLoadingBalance(false)
             }
             getMaticBalance()
         }
@@ -39,7 +41,17 @@ export default function MaticInfo ({ contractStatus }: { contractStatus: Contrac
             <HStack>
                 <HStack color={maticBalance < 0.3 ? 'red' : 'black'}>
                     <Text style={{margin: 0}}>LINK token balance:</Text>
-                    <Text style={{margin: 0, marginLeft: '5px'}}>{maticBalance}</Text>
+                    {
+                        isLoadingBalance ?
+                        <Spinner
+                            thickness='2px'
+                            speed='0.65s'
+                            emptyColor='gray.200'
+                            color='blue.500'
+                            size='sm'
+                        /> :
+                        <Text style={{margin: 0, marginLeft: '5px'}}>{maticBalance}</Text>
+                    }
                 </HStack>
                 <Button
                     onClick={depositLinkMatic}

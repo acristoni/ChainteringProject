@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { HStack, Text } from "@chakra-ui/react";
+import { HStack, Text, Spinner } from "@chakra-ui/react";
 import { ContractStatus } from "@/interfaces/ContractStatus.interface";
 import Button from "@/components/Button";
 import getLinkTokenBalance from "@/utils/getLinkTokenBalance";
@@ -10,6 +10,7 @@ export default function TruflationInfo ({ contractStatus }: { contractStatus: Co
     const [truflationBalance, setTruflationBalance] = useState<number>(0)
     const [updateBalance, setUpdateBalance] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [isLoadingBalance, setIsLoadingBalance] = useState<boolean>(true)
     const contractAbi = contractArtifact.abi
 
     useEffect(()=>{
@@ -20,6 +21,7 @@ export default function TruflationInfo ({ contractStatus }: { contractStatus: Co
                 if (responseBalance && responseBalance.length) {
                     setTruflationBalance(parseFloat(responseBalance))
                 }
+                setIsLoadingBalance(false)
             }
             getTruflationBalance()
         }
@@ -39,7 +41,17 @@ export default function TruflationInfo ({ contractStatus }: { contractStatus: Co
             <HStack>
                 <HStack color={truflationBalance < 0.3 ? 'red' : 'black'}>
                     <Text style={{margin: 0}}>LINK token balance:</Text>
-                    <Text style={{margin: 0, marginLeft: '5px'}}>{truflationBalance}</Text>
+                    {
+                        isLoadingBalance ?
+                        <Spinner
+                            thickness='2px'
+                            speed='0.65s'
+                            emptyColor='gray.200'
+                            color='blue.500'
+                            size='sm'
+                        /> :
+                        <Text style={{margin: 0, marginLeft: '5px'}}>{truflationBalance}</Text>
+                    }
                 </HStack>
                 <Button
                     onClick={depositLinkTruflation}

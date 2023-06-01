@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react"
 import checkContractStatus from "@/utils/checkContractStatus"
-import { VStack, Text, HStack } from "@chakra-ui/react"
+import { VStack, Text, HStack, Spinner } from "@chakra-ui/react"
 import Button from "../Button"
 import { ContractStatus } from "@/interfaces/ContractStatus.interface"
 import ContractInfo from "./components/ContractInfo"
@@ -14,8 +14,7 @@ interface Props {
 
 export default function Contract({ contractAddress }: Props) {
     const role = useRef(sessionStorage.getItem("@ROLE"))
-
-   
+    const [isLoading, setIsLoading] = useState<boolean>(true)
     const [contractStatus, setContractStatus] = useState<ContractStatus>({
         isSetUp: false,
         isStated: false,
@@ -40,6 +39,7 @@ export default function Contract({ contractAddress }: Props) {
                         maticContract: responseStatus.maticContract,
                         totalAmountDueToPay: responseStatus.totalAmountDueToPay
                     })
+                    setIsLoading(false)
                 }
             }
             getContractStatus()
@@ -55,10 +55,22 @@ export default function Contract({ contractAddress }: Props) {
             rounded="md"
             boxShadow="base"
         >
-            <ContractInfo contractAddress={contractAddress} contractStatus={contractStatus} />
-            <TruflationInfo contractStatus={contractStatus} />
-            <MaticInfo contractStatus={contractStatus} />
-            <StartManagement contractAddress={contractAddress} contractStatus={contractStatus} />            
+            {
+                isLoading ?
+                <Spinner
+                    thickness='4px'
+                    speed='0.65s'
+                    emptyColor='gray.200'
+                    color='blue.500'
+                    size='xl'
+                /> :
+                <>
+                    <ContractInfo contractAddress={contractAddress} contractStatus={contractStatus} />
+                    <TruflationInfo contractStatus={contractStatus} />
+                    <MaticInfo contractStatus={contractStatus} />
+                    <StartManagement contractAddress={contractAddress} contractStatus={contractStatus} />            
+                </>
+            }
         </VStack>
     )
 }
