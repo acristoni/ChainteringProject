@@ -1,8 +1,12 @@
 import { useEffect, useState, useRef } from "react"
-import checkContractSetUp from "@/utils/checkContractSetUp"
+import checkContractStatus from "@/utils/checkContractStatus"
 import { VStack, Text, HStack } from "@chakra-ui/react"
 import Button from "../Button"
-import checkContractStarted from "@/utils/checkContractStarted"
+import { ContractStatus } from "@/interfaces/ContractStatus.interface"
+import ContractInfo from "./components/ContractInfo"
+import TruflationInfo from "./components/TruflationInfo"
+import MaticInfo from "./components/MaticInfo"
+import StartManagement from "./components/StartManagement"
 
 interface Props {
     contractAddress: string
@@ -10,22 +14,33 @@ interface Props {
 
 export default function Contract({ contractAddress }: Props) {
     const role = useRef(sessionStorage.getItem("@ROLE"))
-    const [isContractStarted, setIsContractStarted] = useState<boolean>(false)
-    const [vesselId, setVesselId] = useState<number>(0)
+
+   
+    const [contractStatus, setContractStatus] = useState<ContractStatus>({
+        isSetUp: false,
+        isStated: false,
+        IMOnumber: 0,
+        roleUser: '',
+        truflationContract: '',
+        maticContract: ''
+    })
 
     useEffect(()=>{
         if (contractAddress) {
-            const contractSetUp = async() => {
-                const responseCheckContractSetUp = await checkContractSetUp(contractAddress)
-                setVesselId(responseCheckContractSetUp.IMOnumber)
+            const getContractStatus = async() => {
+                const responseStatus = await checkContractStatus(contractAddress)
+                if (role.current)  {
+                    setContractStatus({
+                        isSetUp: responseStatus.isSetUp,
+                        isStated: responseStatus.isStated,
+                        IMOnumber: responseStatus.IMOnumber,
+                        roleUser: role.current,
+                        truflationContract: responseStatus.truflationContract,
+                        maticContract: responseStatus.maticContract
+                    })
+                }
             }
-            contractSetUp()
-
-            const contractStarted = async() => {
-                const responseCheckContractStarted = await checkContractStarted(contractAddress)
-                setIsContractStarted(responseCheckContractStarted)
-            }
-            contractStarted()
+            getContractStatus()
         }
     },[contractAddress])
 
@@ -38,28 +53,10 @@ export default function Contract({ contractAddress }: Props) {
             rounded="md"
             boxShadow="base"
         >
-            <Text as='b' style={{margin: 0}}>Contract Address:</Text>
-            <Text style={{margin: 0}}>{contractAddress}</Text>
-            <Text as='b' style={{margin: 0, marginTop: 4}}>Vessel IMO number:</Text>
-            <Text style={{margin: 0}} textAlign="center">{vesselId}</Text>
-            {
-                !isContractStarted && 
-                role.current === "CHARTERER" ?
-                <HStack
-                    w="100%"
-                    justify="end"
-                >
-                    <Button 
-                        onClick={()=>console.log(contractAddress)}
-                    >
-                        <Text>Start Contract</Text>
-                    </Button>
-                </HStack> : 
-                !isContractStarted && 
-                <Text as="b" color="red.700">
-                    Contract has not commenced yet, only the charterer can initiate the charter period of the vessel.
-                </Text>
-            }
+            <ContractInfo contractAddress={contractAddress} contractStatus={contractStatus} />
+            <TruflationInfo contractStatus={contractStatus} />
+            <MaticInfo contractStatus={contractStatus} />
+            <StartManagement contractAddress={contractAddress} contractStatus={contractStatus} />            
         </VStack>
     )
 }
