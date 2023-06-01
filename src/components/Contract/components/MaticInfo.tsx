@@ -3,11 +3,17 @@ import { HStack, Text } from "@chakra-ui/react";
 import { ContractStatus } from "@/interfaces/ContractStatus.interface";
 import Button from "@/components/Button";
 import getLinkTokenBalance from "@/utils/getLinkTokenBalance";
+import depositLinkToken from "@/utils/depositLinkToken";
+import contractArtifact from "../../../../artifacts/contracts/PriceMaticUSD.sol/PriceMaticUSD.json"
 
 export default function MaticInfo ({ contractStatus }: { contractStatus: ContractStatus }) {
     const [maticBalance, setMaticBalance] = useState<number>(0)
+    const [updateBalance, setUpdateBalance] = useState<boolean>(false)
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const contractAbi = contractArtifact.abi
 
     useEffect(()=>{
+        setIsLoading(false)
         if (contractStatus.maticContract) {
             const getMaticBalance = async() => {
                 const responseBalance = await getLinkTokenBalance(contractStatus.maticContract);
@@ -17,7 +23,15 @@ export default function MaticInfo ({ contractStatus }: { contractStatus: Contrac
             }
             getMaticBalance()
         }
-    },[contractStatus])
+    },[contractStatus, updateBalance])
+
+    const depositLinkMatic = async() => {
+        setIsLoading(true)
+        const responseDeposit = await depositLinkToken(contractStatus.maticContract, contractAbi)
+        if (responseDeposit) {
+            setUpdateBalance(!updateBalance)
+        }
+    }
     
     return (
         <>
@@ -28,7 +42,8 @@ export default function MaticInfo ({ contractStatus }: { contractStatus: Contrac
                     <Text style={{margin: 0, marginLeft: '5px'}}>{maticBalance}</Text>
                 </HStack>
                 <Button
-                    onClick={()=>console.log(contractStatus.maticContract)}
+                    onClick={depositLinkMatic}
+                    isLoading={isLoading}
                 >
                     <Text>
                         Deposit Link
