@@ -14,7 +14,7 @@ export default async function newOperationReport(
     const signer = provider.getSigner();
     const charterContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-    const transaction =  charterContract.newOperationReport(
+    const transaction = await charterContract.newOperationReport(
       operationData.dateDeparture,
       operationData.dateArrival,
       ethers.utils.parseUnits(String(operationData.latitudeDeparture), 18),

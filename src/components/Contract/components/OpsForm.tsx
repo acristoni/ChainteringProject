@@ -46,7 +46,7 @@ export default function OpsForm({ isOpen, onClose, contractAddress }: Props) {
     const [loadingMessage, setLoadingMessage] = useState<string>("")
 
     const handleSendReportButton = async() => {
-        setLoadingMessage("We are request your distance, using Havesine formula on smart contract")
+        setLoadingMessage("We are request your distance, using Haversine formula on smart contract")
         setIsLoading(true)
         const responseDistance = await requestHaversineDistance(contractAddress, opsReportData)
         if (responseDistance && responseDistance.hash && responseDistance.hash.length) {
