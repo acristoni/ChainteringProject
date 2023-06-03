@@ -7,6 +7,7 @@ import ContractInfo from "./components/ContractInfo"
 import TruflationInfo from "./components/TruflationInfo"
 import MaticInfo from "./components/MaticInfo"
 import StartManagement from "./components/StartManagement"
+import OpsReport from "./components/OpsReport"
 
 interface Props {
     contractAddress: string
@@ -68,6 +69,7 @@ export default function Contract({ contractAddress }: Props) {
                     <ContractInfo contractAddress={contractAddress} contractStatus={contractStatus} />
                     <TruflationInfo contractStatus={contractStatus} />
                     <MaticInfo contractStatus={contractStatus} />
+                    <OpsReport contractAddress={contractAddress} contractStatus={contractStatus} />
                     <StartManagement contractAddress={contractAddress} contractStatus={contractStatus} />            
                 </>
             }
