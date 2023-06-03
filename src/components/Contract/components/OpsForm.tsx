@@ -45,7 +45,7 @@ export default function OpsForm({ isOpen, onClose, contractAddress }: Props) {
     const [isOilPriceUpdated, setIsOilPriceUpdated] = useState<boolean>(false)
     const [loadingMessage, setLoadingMessage] = useState<string>("")
 
-    const handleStartButton = async() => {
+    const handleSendReportButton = async() => {
         setLoadingMessage("We are request your distance, using Havesine formula on smart contract")
         setIsLoading(true)
         const responseDistance = await requestHaversineDistance(contractAddress, opsReportData)
@@ -242,7 +242,7 @@ export default function OpsForm({ isOpen, onClose, contractAddress }: Props) {
             {
                 responseMessage.length === 0 &&
                 <Button
-                    onClick={handleStartButton}
+                    onClick={handleSendReportButton}
                     isLoading={isLoading}
                 >
                     <Text>
