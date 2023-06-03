@@ -16,7 +16,7 @@ export default function GroupButtonsHeader() {
         >
             <ButtonHeader 
                 title="Documentation" 
-                href="/documentation"
+                onClick={async () => console.log('eita lasqueira')}
             />
         </Flex>
     )
