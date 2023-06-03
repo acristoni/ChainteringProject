@@ -20,11 +20,11 @@ export default async function getAllDisputes( contractAddress: string ): Promise
     if (totalDisputes) {
       for (let i = 1; i <= totalDisputes; i++) {
         const disputeFromContract = await charterContract.allDisputes(i)
-        
+                
         const startTimeFromContract = disputeFromContract.startTime._hex
         const startTime = convertHexTimestampToISO(startTimeFromContract)
         
-        const endTimeFromContract = disputeFromContract.startTime._hex
+        const endTimeFromContract = disputeFromContract.endTime._hex
         const endTime = convertHexTimestampToISO(endTimeFromContract)
 
         const valueFromContract = disputeFromContract.value._hex

@@ -56,6 +56,8 @@ export default function Disputes({ contractStatus, contractAddress }: Props) {
                                 <DisputeInfo 
                                     key={dispute.id} 
                                     disputeInfo={dispute}
+                                    userRole={contractStatus.roleUser}
+                                    contractAddress={contractAddress}
                                 />
                             )
                         }                    

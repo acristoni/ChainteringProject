@@ -12,7 +12,13 @@ export default function OpsReport({ contractStatus, contractAddress }: Props) {
     const {isOpen, onOpen, onClose} = useDisclosure()
     
     return (
-        <Box pt={4}>
+        <Box 
+            pt={contractStatus.roleUser === "SHIPOWNER" ? 4 : 0} 
+            style={{
+                margin: 0,
+                marginTop: "-10px"
+            }}
+        >
             <OpsForm 
                 isOpen={isOpen}
                 onClose={onClose}

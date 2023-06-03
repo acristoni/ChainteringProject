@@ -78,7 +78,7 @@ export default function BadWeatherReport({ contractStatus, contractAddress }: Pr
                     {
                         isLoading ?
                         <VStack>
-                            <Text as="b">We are processing you request on blockchain</Text>
+                            <Text as="b">We are processing your request on blockchain</Text>
                             <Spinner
                                 thickness='4px'
                                 speed='0.65s'
