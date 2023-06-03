@@ -19,7 +19,7 @@ export default function OpsReport({ contractStatus, contractAddress }: Props) {
                 contractAddress={contractAddress}
             />
             {
-                contractStatus.isStated && contractStatus.roleUser === "SHIPOWNER" &&
+                contractStatus.isStarted && contractStatus.roleUser === "SHIPOWNER" &&
                 <Button
                     onClick={onOpen}
                 >

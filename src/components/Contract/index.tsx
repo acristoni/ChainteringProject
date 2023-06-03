@@ -7,17 +7,17 @@ import TruflationInfo from "./components/TruflationInfo"
 import MaticInfo from "./components/MaticInfo"
 import StartManagement from "./components/StartManagement"
 import OpsReport from "./components/OpsReport"
+import BadWeatherReport from "./components/BadWeatherReport"
 
 interface Props {
     contractAddress: string
 }
 
 export default function Contract({ contractAddress }: Props) {
-    const [userRole, setUserRole] = useState<string>("")
     const [isLoading, setIsLoading] = useState<boolean>(true)
-    const [contractStatus, setContractStatus] = useState<ContractStatus>({
+    const [ contractStatus, setContractStatus] = useState<ContractStatus>({
         isSetUp: false,
-        isStated: false,
+        isStarted: false,
         IMOnumber: 0,
         roleUser: '',
         truflationContract: '',
@@ -26,28 +26,24 @@ export default function Contract({ contractAddress }: Props) {
     })
 
     useEffect(()=>{
-        if (typeof window !== 'undefined') {
-          const role = sessionStorage.getItem("@ROLE")
-          if (role) setUserRole(role)
-        }
-      },[])
-
-    useEffect(()=>{
-        if (contractAddress) {
-            const getContractStatus = async() => {
-                const responseStatus = await checkContractStatus(contractAddress)
-                setContractStatus({
-                    isSetUp: responseStatus.isSetUp,
-                    isStated: responseStatus.isStated,
-                    IMOnumber: responseStatus.IMOnumber,
-                    roleUser: userRole,
-                    truflationContract: responseStatus.truflationContract,
-                    maticContract: responseStatus.maticContract,
-                    totalAmountDueToPay: responseStatus.totalAmountDueToPay
-                })
-                setIsLoading(false)
+        if (contractAddress && typeof window !== 'undefined') {
+            const role = sessionStorage.getItem("@ROLE")
+            if (role) {
+                const getContractStatus = async() => {
+                    const responseStatus = await checkContractStatus(contractAddress)
+                    setContractStatus({
+                        isSetUp: responseStatus.isSetUp,
+                        isStarted: responseStatus.isStarted,
+                        IMOnumber: responseStatus.IMOnumber,
+                        roleUser: role,
+                        truflationContract: responseStatus.truflationContract,
+                        maticContract: responseStatus.maticContract,
+                        totalAmountDueToPay: responseStatus.totalAmountDueToPay
+                    })
+                    setIsLoading(false)
+                }
+                getContractStatus()
             }
-            getContractStatus()
         }
     },[contractAddress])
 
@@ -73,6 +69,7 @@ export default function Contract({ contractAddress }: Props) {
                     <ContractInfo contractAddress={contractAddress} contractStatus={contractStatus} />
                     <TruflationInfo contractStatus={contractStatus} />
                     <MaticInfo contractStatus={contractStatus} />
+                    <BadWeatherReport contractAddress={contractAddress} contractStatus={contractStatus} />
                     <OpsReport contractAddress={contractAddress} contractStatus={contractStatus} />
                     <StartManagement contractAddress={contractAddress} contractStatus={contractStatus} />            
                 </>

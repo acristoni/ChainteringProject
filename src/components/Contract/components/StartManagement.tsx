@@ -10,11 +10,11 @@ interface Props {
 }
 
 export default function StartManagement({ contractAddress, contractStatus }: Props) {
-    const [isStated, setIsStarted] = useState<boolean>(false)
+    const [isStarted, setIsStarted] = useState<boolean>(false)
     const { isOpen, onOpen, onClose } = useDisclosure()
 
     useEffect(()=>{
-        if (contractStatus.isStated) {
+        if (contractStatus.isStarted) {
             setIsStarted(true)
         }
     },[contractStatus])
@@ -28,7 +28,7 @@ export default function StartManagement({ contractAddress, contractStatus }: Pro
                 setIsStarted={setIsStarted}
             />
             {
-                !isStated && 
+                !isStarted && 
                 contractStatus.roleUser === "CHARTERER" ?
                 <HStack
                     w="100%"
@@ -40,7 +40,7 @@ export default function StartManagement({ contractAddress, contractStatus }: Pro
                         <Text>Start Contract</Text>
                     </Button>
                 </HStack> : 
-                !isStated && 
+                !isStarted && 
                 <Text as="b" color="red.700">
                     Contract has not commenced yet, only the charterer can initiate the charter period of the vessel.
                 </Text>

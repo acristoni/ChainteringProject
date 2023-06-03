@@ -1,6 +1,6 @@
 export interface ResponseCheckStatus {
     isSetUp: boolean;
-    isStated: boolean;
+    isStarted: boolean;
     IMOnumber: number;
     truflationContract: string;
     maticContract: string;

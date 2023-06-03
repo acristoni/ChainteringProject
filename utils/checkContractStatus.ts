@@ -8,7 +8,7 @@ export default async function checkContractStatus (contractAddress: string): Pro
     isSetUp: false,
     IMOnumber: 0
   };
-  let isStated = false;
+  let isStarted = false;
 
   if (typeof window.ethereum !== 'undefined') {
     await window.ethereum.enable();
@@ -32,7 +32,7 @@ export default async function checkContractStatus (contractAddress: string): Pro
     if (contractTimes && contractTimes.length) {
       const startDateTime = parseInt(contractTimes[0]);
       if (startDateTime) {
-        isStated = true
+        isStarted = true
       }
     }
 
@@ -42,7 +42,7 @@ export default async function checkContractStatus (contractAddress: string): Pro
 
     return {
       ...checkSetUp,
-      isStated,
+      isStarted,
       truflationContract,
       maticContract,
       totalAmountDueToPay
@@ -52,7 +52,7 @@ export default async function checkContractStatus (contractAddress: string): Pro
     return {
       isSetUp: false, 
       IMOnumber: 0,
-      isStated: false,
+      isStarted: false,
       truflationContract: "",
       maticContract: "",
       totalAmountDueToPay: 0
