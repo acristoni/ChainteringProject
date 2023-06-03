@@ -7,9 +7,9 @@ import deployContract from "@/utils/deployContract";
 import newCharter from "@/services/newCharter";
 
 export default function DeployCharter({ setStep }: { setStep: (value: number) => void }) {
-    const charterContractAddress = useRef(sessionStorage.getItem("@NEWCHARTER"))
-    const role = useRef(sessionStorage.getItem("@ROLE"))
-    const userAddress = useRef(sessionStorage.getItem("@WALLET"))
+    const [role, setRole] = useState<string>("")
+    const [charterContractAddress, setCharterContractAddress] = useState<string>("")
+    const [userAddress, setUserAddress] = useState<string>("")
     const [isLoading, setisLoading] = useState<boolean>(false)
     const [contractParties, setContractParties] = useState<Parties>({
         shipOwner: '',
@@ -20,24 +20,36 @@ export default function DeployCharter({ setStep }: { setStep: (value: number) =>
     })
 
     useEffect(()=>{
-        if (charterContractAddress.current && charterContractAddress.current.length) {
-            setStep(4)
+        if (typeof window !== 'undefined') {
+            const charterAddress = sessionStorage.getItem("@NEWCHARTER")
+            const roleUser = sessionStorage.getItem("@ROLE")
+            const wallet = sessionStorage.getItem("@WALLET")
+            
+            if (roleUser) setRole(roleUser)
+            if (charterAddress) setCharterContractAddress(charterAddress)
+            if (wallet) setUserAddress(wallet)
         }
-    },[charterContractAddress.current])
+      },[])
 
     useEffect(()=>{
-        if (role.current && userAddress.current) {
-            if (role.current === "SHIPOWNER") {
-                setContractParties({ ...contractParties, shipOwner: userAddress.current })
+        if (charterContractAddress && charterContractAddress.length) {
+            setStep(4)
+        }
+    },[charterContractAddress])
+
+    useEffect(()=>{
+        if (role && userAddress) {
+            if (role === "SHIPOWNER") {
+                setContractParties({ ...contractParties, shipOwner: userAddress })
             }
-            if (role.current === "CHARTERER") {
-                setContractParties({ ...contractParties, charterer: userAddress.current })
+            if (role === "CHARTERER") {
+                setContractParties({ ...contractParties, charterer: userAddress })
             }
-            if (role.current === "ARBITER") {
-                setContractParties({ ...contractParties, arbiter_2: userAddress.current })
+            if (role === "ARBITER") {
+                setContractParties({ ...contractParties, arbiter_2: userAddress })
             }
         }
-    },[role.current])
+    },[role])
 
     const deployCharterContract = async() => {
         setisLoading(true)
@@ -107,7 +119,7 @@ export default function DeployCharter({ setStep }: { setStep: (value: number) =>
                         placeholder='Ship Owner public wallet address' 
                         value={contractParties.shipOwner}
                         onChange={e=>setContractParties({...contractParties, shipOwner:e.target.value})}
-                        isDisabled={role.current === "SHIPOWNER"}
+                        isDisabled={role === "SHIPOWNER"}
                     />
                     <Text pt={4}>
                         Charterer public wallet address
@@ -116,7 +128,7 @@ export default function DeployCharter({ setStep }: { setStep: (value: number) =>
                         placeholder='Charterer public wallet address' 
                         value={contractParties.charterer}
                         onChange={e=>setContractParties({...contractParties, charterer:e.target.value})}
-                        isDisabled={role.current === "CHARTERER"}
+                        isDisabled={role === "CHARTERER"}
                     />
                     <Text pt={4}>
                         First arbiter public wallet address
@@ -125,7 +137,7 @@ export default function DeployCharter({ setStep }: { setStep: (value: number) =>
                         placeholder='First arbiter wallet address' 
                         value={contractParties.arbiter_1}
                         onChange={e=>setContractParties({...contractParties, arbiter_1:e.target.value})}
-                        isDisabled={role.current === "ARBITER"}
+                        isDisabled={role === "ARBITER"}
                     />
                     <Text pt={4}>
                         Second arbiter public wallet address

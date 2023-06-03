@@ -8,17 +8,16 @@ import AllContracts from "@/components/AllContracts";
 import { ContractParties as IContractParties } from "../../interfaces/ContractParties.interface"
 
 export default function Dashboard() {
-  const role = useRef(sessionStorage.getItem("@ROLE"))
   const [contractsAddresses, setContractAddresses] = useState<string[]>([])
   const [mainText, setMainText] = useState<string>("")
   const [userRole, setUserRole] = useState<string>("")
-
+  
   useEffect(()=>{
-    if (role.current) {
-      setUserRole(role.current)
+    if (typeof window !== 'undefined') {
+      const role = sessionStorage.getItem("@ROLE")
+      if (role) setUserRole(role)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[role.current])
+  },[])
 
   useEffect(()=>{
     const wallet = sessionStorage.getItem("@WALLET")

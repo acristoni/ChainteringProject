@@ -5,14 +5,14 @@ import priceMatic from "../../../artifacts/contracts/PriceMaticUSD.sol/PriceMati
 import deployContract from "@/utils/deployContract";
 
 export default function DeployPriceMatic({ setStep }: { setStep: (value: number) => void }) {
-    const maticContractAddress = useRef(sessionStorage.getItem("@MATIC_CONTRACT"))
     const [isLoading, setisLoading] = useState<boolean>(false)
 
     useEffect(()=>{
-        if (maticContractAddress.current && maticContractAddress.current.length) {
-            setStep(3)
+        if (typeof window !== 'undefined') {
+            const maticContractAddress = sessionStorage.getItem("@MATIC_CONTRACT")
+          if (maticContractAddress) setStep(3)
         }
-    },[maticContractAddress.current])
+    },[])
 
     const deployPriceMaticUSDContract = async() => {
         setisLoading(true)

@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from "react"
 import checkContractStatus from "@/utils/checkContractStatus"
-import { VStack, Text, HStack, Spinner } from "@chakra-ui/react"
-import Button from "../Button"
+import { VStack, Spinner } from "@chakra-ui/react"
 import { ContractStatus } from "@/interfaces/ContractStatus.interface"
 import ContractInfo from "./components/ContractInfo"
 import TruflationInfo from "./components/TruflationInfo"
@@ -14,7 +13,7 @@ interface Props {
 }
 
 export default function Contract({ contractAddress }: Props) {
-    const role = useRef(sessionStorage.getItem("@ROLE"))
+    const [userRole, setUserRole] = useState<string>("")
     const [isLoading, setIsLoading] = useState<boolean>(true)
     const [contractStatus, setContractStatus] = useState<ContractStatus>({
         isSetUp: false,
@@ -27,21 +26,26 @@ export default function Contract({ contractAddress }: Props) {
     })
 
     useEffect(()=>{
+        if (typeof window !== 'undefined') {
+          const role = sessionStorage.getItem("@ROLE")
+          if (role) setUserRole(role)
+        }
+      },[])
+
+    useEffect(()=>{
         if (contractAddress) {
             const getContractStatus = async() => {
                 const responseStatus = await checkContractStatus(contractAddress)
-                if (role.current)  {
-                    setContractStatus({
-                        isSetUp: responseStatus.isSetUp,
-                        isStated: responseStatus.isStated,
-                        IMOnumber: responseStatus.IMOnumber,
-                        roleUser: role.current,
-                        truflationContract: responseStatus.truflationContract,
-                        maticContract: responseStatus.maticContract,
-                        totalAmountDueToPay: responseStatus.totalAmountDueToPay
-                    })
-                    setIsLoading(false)
-                }
+                setContractStatus({
+                    isSetUp: responseStatus.isSetUp,
+                    isStated: responseStatus.isStated,
+                    IMOnumber: responseStatus.IMOnumber,
+                    roleUser: userRole,
+                    truflationContract: responseStatus.truflationContract,
+                    maticContract: responseStatus.maticContract,
+                    totalAmountDueToPay: responseStatus.totalAmountDueToPay
+                })
+                setIsLoading(false)
             }
             getContractStatus()
         }

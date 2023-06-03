@@ -5,14 +5,14 @@ import truflation from "../../../artifacts/contracts/Truflation.sol/Truflation.j
 import deployContract from "@/utils/deployContract";
 
 export default function DeployTruflation({ setStep }: { setStep: (value: number) => void }) {
-    const truflationContractAddress = useRef(sessionStorage.getItem("@TRUFLATION"))
     const [isLoading, setisLoading] = useState<boolean>(false)
 
     useEffect(()=>{
-        if (truflationContractAddress.current && truflationContractAddress.current.length) {
-            setStep(2)
+        if (typeof window !== 'undefined') {
+            const truflationAddress = sessionStorage.getItem("@TRUFLATION")
+          if (truflationAddress) setStep(2)
         }
-    },[truflationContractAddress.current])
+    },[])
 
     const deployTruflationContract = async() => {
         setisLoading(true)
