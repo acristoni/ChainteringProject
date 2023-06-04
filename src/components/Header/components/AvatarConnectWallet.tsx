@@ -20,7 +20,11 @@ export default function AvatarConnectWallet({ avatarName, onOpen }:{avatarName: 
             const responseConnection = await connectWallet()
             if (typeof responseConnection === 'string') {
                 if (responseConnection === "registeredUser") {
-                    router.push('/dashboard');
+                    if (router.asPath === '/dashboard') {
+                        router.reload()
+                    } else {
+                        router.push('/dashboard')
+                    }
                     setIsLoading(false)
                 }
                 if (responseConnection === "choseRole") {
