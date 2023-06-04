@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
-import contractArtifact from '../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';  
+import contractArtifact from '../../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';  
 import { ResponseCheckStatus } from '@/interfaces/ResponseCheckStatus.interface';
-import convertHexToInt from './convertHexToInt';
+import convertHexToInt from '../convertFunctions/convertHexToInt';
 
 export default async function checkContractStatus (contractAddress: string): Promise<ResponseCheckStatus> {
   const contractABI: any[] = contractArtifact.abi;

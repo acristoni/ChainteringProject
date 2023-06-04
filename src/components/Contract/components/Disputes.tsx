@@ -1,5 +1,5 @@
 import { ContractStatus } from "@/interfaces/ContractStatus.interface"
-import getAllDisputes from "@/utils/getAllDisputes"
+import getAllDisputes from "@/utils/contractInteractions/getAllDisputes"
 import { useEffect, useState } from "react"
 import { Divider, HStack, Text, VStack, useDisclosure } from "@chakra-ui/react"
 import { Dispute } from "@/interfaces/Dispute.interface"

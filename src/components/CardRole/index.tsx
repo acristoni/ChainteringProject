@@ -1,7 +1,7 @@
 import { VStack, Text, Box } from "@chakra-ui/react";
 import createUser from "../../../services/createUser"
 import { useRouter } from "next/router";
-import getUserAddress from "@/utils/getUserAddress";
+import getUserAddress from "@/utils/userInteractions/getUserAddress";
 
 type Props = {
     title: string

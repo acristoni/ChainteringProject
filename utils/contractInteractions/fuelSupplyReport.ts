@@ -1,10 +1,8 @@
 import { ethers } from 'ethers';
-import contractArtifact from '../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
+import contractArtifact from '../../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
+import { FuelSupplyData } from '@/interfaces/FuelSupplyData.interface';
 
-export default async function sendVote(
-  contractAddress: string, 
-  disputeId: number,
-  isReasonable: boolean ): Promise<ethers.providers.TransactionResponse> {
+export default async function fuelSupplyReport( contractAddress: string, fuelSupplyData: FuelSupplyData ): Promise<ethers.providers.TransactionResponse> {
   const contractABI: any[] = contractArtifact.abi
 
   if (typeof window.ethereum !== 'undefined') {
@@ -14,13 +12,10 @@ export default async function sendVote(
     const signer = provider.getSigner();
     const charterContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-    const transaction = await charterContract.judgeDispute(
-        disputeId,
-        isReasonable
-    );
+    const transaction = await  charterContract.oilSupplyReport(fuelSupplyData.dateOfSupply, fuelSupplyData.quantity);
 
     const transactionReceipt = await transaction.wait();
-    console.log('tx vote: ', transactionReceipt);
+    console.log('tx inform fuel supply: ', transactionReceipt);
 
     return transaction;
   } else {

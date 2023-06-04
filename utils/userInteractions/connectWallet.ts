@@ -1,4 +1,4 @@
-import getUserRole from '../services/getUserRole'
+import getUserRole from '../../services/getUserRole'
 import getUserAddress from './getUserAddress';
 
 const requestAccounts = async () => {  
@@ -6,7 +6,6 @@ const requestAccounts = async () => {
     const mainAccount = await getUserAddress();
     const response = await getUserRole(mainAccount);
     if (response.success && response.data) {
-      console.log("🚀 ~ file: connectWallet.ts:9 ~ requestAccounts ~ response.data:", response.data)
       const role: string = response.data.role
       const walletAddress: string = response.data.walletAddress
       sessionStorage.setItem("@ROLE", role)

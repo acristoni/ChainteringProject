@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { HStack, Text, Spinner } from "@chakra-ui/react";
 import { ContractStatus } from "@/interfaces/ContractStatus.interface";
 import Button from "@/components/Button";
-import getLinkTokenBalance from "@/utils/getLinkTokenBalance";
-import depositLinkToken from "@/utils/depositLinkToken";
+import getLinkTokenBalance from "@/utils/contractInteractions/getLinkTokenBalance";
+import depositLinkToken from "@/utils/contractInteractions/depositLinkToken";
 import contractArtifact from "../../../../artifacts/contracts/PriceMaticUSD.sol/PriceMaticUSD.json"
 
 export default function MaticInfo ({ contractStatus }: { contractStatus: ContractStatus }) {

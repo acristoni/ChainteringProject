@@ -1,9 +1,7 @@
 import { ethers } from 'ethers';
-import contractArtifact from '../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
+import contractArtifact from '../../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
 
-export default async function startCharter(
-  contractAddress: string, 
-  chartersTimeMonths: number ): Promise<ethers.providers.TransactionResponse> {
+export default async function requestCrudeOilPrice( contractAddress: string ): Promise<ethers.providers.TransactionResponse> {
   const contractABI: any[] = contractArtifact.abi
 
   if (typeof window.ethereum !== 'undefined') {
@@ -13,7 +11,12 @@ export default async function startCharter(
     const signer = provider.getSigner();
     const charterContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-    return charterContract.startCharter(chartersTimeMonths);
+    const transaction = await  charterContract.requestCrudeOilPrice();
+
+    const transactionReceipt = await transaction.wait();
+    console.log('tx crude oil: ', transactionReceipt);
+
+    return transaction;
   } else {
     throw new Error('Metamask is not installed or not connected.');
   }

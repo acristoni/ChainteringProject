@@ -2,7 +2,7 @@ import { useState } from "react";
 import { VStack, Text, Input, Box, Spinner } from "@chakra-ui/react";
 import Button from "../Button";
 import { SetUpCharterData } from "@/interfaces/SetUpCharterData.interface";
-import setUpCharter from "@/utils/setUpCharter";
+import setUpCharter from "@/utils/contractInteractions/setUpCharter";
 
 export default function SetUpCharter({ setStep }: { setStep: (value: number) => void }) {
     const [isLoading, setisLoading] = useState<boolean>(false)

@@ -3,7 +3,7 @@ import { Parties } from "@/interfaces/Parties.interface";
 import { VStack, Text, Input, Box, Spinner } from "@chakra-ui/react";
 import Button from "../Button";
 import shipCharter from "../../../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json"
-import deployContract from "@/utils/deployContract";
+import deployContract from "@/utils/contractInteractions/deployContract";
 import newCharter from "@/services/newCharter";
 
 export default function DeployCharter({ setStep }: { setStep: (value: number) => void }) {

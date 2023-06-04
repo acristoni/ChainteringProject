@@ -1,10 +1,10 @@
 import { ethers } from 'ethers';
-import contractArtifact from '../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
-import { OpsReport } from '@/interfaces/OpsReport.interface';
+import contractArtifact from '../../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
+import { OpenDispute } from '@/interfaces/OpenDispute.interface';
 
-export default async function requestHaversineDist(
+export default async function openDispute(
   contractAddress: string, 
-  operationData: OpsReport ): Promise<ethers.providers.TransactionResponse> {
+  disputeData: OpenDispute ): Promise<ethers.providers.TransactionResponse> {
   const contractABI: any[] = contractArtifact.abi
 
   if (typeof window.ethereum !== 'undefined') {
@@ -14,11 +14,12 @@ export default async function requestHaversineDist(
     const signer = provider.getSigner();
     const charterContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-    const transaction = await charterContract.requestHaversineDistance(
-      String(operationData.latitudeDeparture),
-      String(operationData.longitudeDerparture),
-      String(operationData.latitudeArrival),
-      String(operationData.longitudeArrival)
+    const transaction = await charterContract.createDispute(
+      disputeData.startTime,
+      disputeData.endTime,
+      disputeData.reason,
+      disputeData.value,
+      disputeData.partie
     );
 
     const transactionReceipt = await transaction.wait();

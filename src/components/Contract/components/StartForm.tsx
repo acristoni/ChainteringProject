@@ -12,7 +12,7 @@ import {
     Text,
     Input,
 } from '@chakra-ui/react'
-import startCharter from '@/utils/startCharter';
+import startCharter from '@/utils/contractInteractions/startCharter';
 
 interface Props {
     isOpen: boolean;

@@ -2,7 +2,7 @@ import { ChangeEvent, useEffect, useState } from "react"
 import { useRouter } from 'next/router';
 import Button from "@/components/Button"
 import { ContractStatus } from "@/interfaces/ContractStatus.interface"
-import informBadWeather from "@/utils/informBadWeather"
+import informBadWeather from "@/utils/contractInteractions/informBadWeather"
 import {
     Modal,
     ModalOverlay,
@@ -21,10 +21,9 @@ import {
     Input,
     HStack,
 } from '@chakra-ui/react'
-import checkVesselUnderBadWeather from "@/utils/checkVesselUnderBadWeather";
 import { FuelSupplyData } from "@/interfaces/FuelSupplyData.interface";
-import fuelSupplyReport from "@/utils/fuelSupplyReport";
-import convertToEvmTimestamp from "@/utils/convertToEvmTimestamp";
+import fuelSupplyReport from "@/utils/contractInteractions/fuelSupplyReport";
+import convertToEvmTimestamp from "@/utils/convertFunctions/convertToEvmTimestamp";
 
 interface Props {
     contractStatus: ContractStatus

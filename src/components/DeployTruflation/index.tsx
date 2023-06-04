@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { VStack, Text, Box, Spinner } from "@chakra-ui/react";
 import Button from "../Button";
 import truflation from "../../../artifacts/contracts/Truflation.sol/Truflation.json"
-import deployContract from "@/utils/deployContract";
+import deployContract from "@/utils/contractInteractions/deployContract";
 
 export default function DeployTruflation({ setStep }: { setStep: (value: number) => void }) {
     const [isLoading, setisLoading] = useState<boolean>(false)

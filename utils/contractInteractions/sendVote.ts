@@ -1,10 +1,10 @@
 import { ethers } from 'ethers';
-import contractArtifact from '../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
-import { OpenDispute } from '@/interfaces/OpenDispute.interface';
+import contractArtifact from '../../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
 
-export default async function openDispute(
+export default async function sendVote(
   contractAddress: string, 
-  disputeData: OpenDispute ): Promise<ethers.providers.TransactionResponse> {
+  disputeId: number,
+  isReasonable: boolean ): Promise<ethers.providers.TransactionResponse> {
   const contractABI: any[] = contractArtifact.abi
 
   if (typeof window.ethereum !== 'undefined') {
@@ -14,16 +14,13 @@ export default async function openDispute(
     const signer = provider.getSigner();
     const charterContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-    const transaction = await charterContract.createDispute(
-      disputeData.startTime,
-      disputeData.endTime,
-      disputeData.reason,
-      disputeData.value,
-      disputeData.partie
+    const transaction = await charterContract.judgeDispute(
+        disputeId,
+        isReasonable
     );
 
     const transactionReceipt = await transaction.wait();
-    console.log('tx dist: ', transactionReceipt);
+    console.log('tx vote: ', transactionReceipt);
 
     return transaction;
   } else {

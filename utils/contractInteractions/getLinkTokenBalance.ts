@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import tokenABI from "../token/linkabi.json"
+import tokenABI from "../../token/linkabi.json"
 
 async function getLinkTokenBalance(contractAddress: string): Promise<string> {
     if (typeof window.ethereum !== 'undefined') {

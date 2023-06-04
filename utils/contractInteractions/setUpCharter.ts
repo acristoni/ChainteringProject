@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import contractArtifact from '../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
+import contractArtifact from '../../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
 import { SetUpCharterData } from '@/interfaces/SetUpCharterData.interface';
 
 export default async function setUpCharter(

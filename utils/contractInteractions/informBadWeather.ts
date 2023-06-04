@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import contractArtifact from '../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
+import contractArtifact from '../../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
 
 export default async function informBadWeather( contractAddress: string, latitude: string, longitude: string ): Promise<ethers.providers.TransactionResponse> {
   const contractABI: any[] = contractArtifact.abi

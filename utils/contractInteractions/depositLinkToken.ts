@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import tokenABI from "../token/linkabi.json"
+import tokenABI from "../../token/linkabi.json"
 
 async function depositLinkToken(contractAddress: string, contractABI: any[]): Promise<ethers.providers.TransactionResponse> {
   if (typeof window.ethereum !== 'undefined') {

@@ -17,10 +17,10 @@ import {
     Select,
     VStack,
 } from '@chakra-ui/react'
-import convertToEvmTimestamp from '@/utils/convertToEvmTimestamp'
+import convertToEvmTimestamp from '@/utils/convertFunctions/convertToEvmTimestamp'
 import { OpenDispute } from '@/interfaces/OpenDispute.interface';
 import { ContractStatus } from '@/interfaces/ContractStatus.interface';
-import openDispute from '@/utils/openDispute';
+import openDispute from '@/utils/contractInteractions/openDispute';
 
 interface Props {
     isOpen: boolean;

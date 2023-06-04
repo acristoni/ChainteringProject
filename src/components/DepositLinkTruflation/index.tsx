@@ -2,7 +2,7 @@ import { useState } from "react";
 import { VStack, Text, Box, Spinner } from "@chakra-ui/react";
 import Button from "../Button";
 import contractArtifact from "../../../artifacts/contracts/Truflation.sol/Truflation.json"
-import depositLinkToken from "@/utils/depositLinkToken";
+import depositLinkToken from "@/utils/contractInteractions/depositLinkToken";
 
 export default function DepositLinkTruflation({ setStep }: { setStep: (value: number) => void }) {
     const [isLoading, setisLoading] = useState<boolean>(false)

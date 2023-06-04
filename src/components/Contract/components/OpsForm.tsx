@@ -16,11 +16,11 @@ import {
     Select,
     VStack,
 } from '@chakra-ui/react'
-import convertToEvmTimestamp from '@/utils/convertToEvmTimestamp';
+import convertToEvmTimestamp from '@/utils/convertFunctions/convertToEvmTimestamp';
 import { OpsReport } from '@/interfaces/OpsReport.interface';
-import newOperationReport from '@/utils/newOperationReport';
-import requestHaversineDistance from '@/utils/requestHaversineDist';
-import requestCrudeOilPrice from '@/utils/requestCrudeOilPrice';
+import newOperationReport from '@/utils/contractInteractions/newOperationReport';
+import requestHaversineDistance from '@/utils/contractInteractions/requestHaversineDist';
+import requestCrudeOilPrice from '@/utils/contractInteractions/requestCrudeOilPrice';
 
 interface Props {
     isOpen: boolean;

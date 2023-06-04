@@ -1,8 +1,8 @@
 import { Avatar, HStack } from "@chakra-ui/react";
 import { useRouter } from 'next/router';
 import ButtonHeader from "./ButtonHeader";
-import connectWallet from "@/utils/connectWallet";
-import checkNetwork from "@/utils/checkNetwork"
+import connectWallet from "@/utils/userInteractions/connectWallet";
+import checkNetwork from "@/utils/userInteractions/checkNetwork"
 
 export default function AvatarConnectWallet({ avatarName, onOpen }:{avatarName: string, onOpen: () => void}) {
     const router = useRouter();

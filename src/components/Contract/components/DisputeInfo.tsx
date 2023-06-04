@@ -18,8 +18,8 @@ import {
     Spinner,
 } from '@chakra-ui/react'
 import { DisputeParties } from "@/enum/DisputeParties.enum";
-import formatDateIsoToNormal from "@/utils/formatDateIsoToNormal";
-import sendVote from "@/utils/sendVote";
+import formatDateIsoToNormal from "@/utils/convertFunctions/formatDateIsoToNormal";
+import sendVote from "@/utils/contractInteractions/sendVote";
 import { useState } from "react";
 
 

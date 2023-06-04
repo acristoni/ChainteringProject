@@ -1,8 +1,8 @@
 import { ethers } from 'ethers';
-import contractArtifact from '../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
+import contractArtifact from '../../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
 import { OpsReport } from '@/interfaces/OpsReport.interface';
 
-export default async function newOperationReport(
+export default async function requestHaversineDist(
   contractAddress: string, 
   operationData: OpsReport ): Promise<ethers.providers.TransactionResponse> {
   const contractABI: any[] = contractArtifact.abi
@@ -14,19 +14,15 @@ export default async function newOperationReport(
     const signer = provider.getSigner();
     const charterContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-    const transaction = await charterContract.newOperationReport(
-      operationData.dateDeparture,
-      operationData.dateArrival,
-      ethers.utils.parseUnits(String(operationData.latitudeDeparture), 18),
-      ethers.utils.parseUnits(String(operationData.longitudeDerparture), 18),
-      ethers.utils.parseUnits(String(operationData.latitudeArrival), 18),
-      ethers.utils.parseUnits(String(operationData.longitudeArrival), 18),
-      operationData.oilConsuption,
-      operationData.operationCode
+    const transaction = await charterContract.requestHaversineDistance(
+      String(operationData.latitudeDeparture),
+      String(operationData.longitudeDerparture),
+      String(operationData.latitudeArrival),
+      String(operationData.longitudeArrival)
     );
 
     const transactionReceipt = await transaction.wait();
-    console.log('tx send report: ', transactionReceipt);
+    console.log('tx dist: ', transactionReceipt);
 
     return transaction;
   } else {

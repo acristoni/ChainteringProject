@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { HStack, Text, Spinner } from "@chakra-ui/react";
 import { ContractStatus } from "@/interfaces/ContractStatus.interface";
 import Button from "@/components/Button";
-import getLinkTokenBalance from "@/utils/getLinkTokenBalance";
+import getLinkTokenBalance from "@/utils/contractInteractions/getLinkTokenBalance";
 import contractArtifact from "../../../../artifacts/contracts/Truflation.sol/Truflation.json"
-import depositLinkToken from "@/utils/depositLinkToken";
+import depositLinkToken from "@/utils/contractInteractions/depositLinkToken";
 
 export default function TruflationInfo ({ contractStatus }: { contractStatus: ContractStatus }) {
     const [truflationBalance, setTruflationBalance] = useState<number>(0)

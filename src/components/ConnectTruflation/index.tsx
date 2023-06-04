@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { VStack, Text, Box, Spinner } from "@chakra-ui/react";
 import Button from "../Button";
-import connectToShipChartering from "@/utils/connectToShipChartering";
+import connectToShipChartering from "@/utils/contractInteractions/connectToShipChartering";
 import contractArtifact from "../../../artifacts/contracts/Truflation.sol/Truflation.json"
 
 export default function ConnectTruflation({ setStep }: { setStep: (value: number) => void }) {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { VStack, Text, Box, Spinner } from "@chakra-ui/react";
 import Button from "../Button";
 import contractArtifact from "../../../artifacts/contracts/PriceMaticUSD.sol/PriceMaticUSD.json"
-import depositLinkToken from "@/utils/depositLinkToken";
+import depositLinkToken from "@/utils/contractInteractions/depositLinkToken";
 
 export default function DepositLinkMatic({ setStep }: { setStep: (value: number) => void }) {
     const [isLoading, setisLoading] = useState<boolean>(false)

@@ -1,9 +1,9 @@
 import { ethers } from 'ethers';
-import contractArtifact from '../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
+import contractArtifact from '../../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
 import { Dispute } from '@/interfaces/Dispute.interface';
 import { DisputeParties } from '@/enum/DisputeParties.enum';
-import convertHexTimestampToISO from './convertHexTimestampToISO';
-import convertHexToInt from './convertHexToInt';
+import convertHexTimestampToISO from '../convertFunctions/convertHexTimestampToISO';
+import convertHexToInt from '../convertFunctions/convertHexToInt';
 
 export default async function getAllDisputes( contractAddress: string ): Promise<Dispute[]>  {
   const contractABI: any[] = contractArtifact.abi
