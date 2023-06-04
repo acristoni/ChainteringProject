@@ -15,6 +15,7 @@ export default function GroupButtonsHeader() {
             align={isMobile ? "end" : "center"}
         >
             <ButtonHeader 
+                isLoading={false}
                 title="Documentation" 
                 onClick={async () => console.log('eita lasqueira')}
             />
