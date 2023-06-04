@@ -1,7 +1,7 @@
 import { ContractStatus } from "@/interfaces/ContractStatus.interface"
 import getAllDisputes from "@/utils/getAllDisputes"
 import { useEffect, useState } from "react"
-import { HStack, Text, VStack, useDisclosure } from "@chakra-ui/react"
+import { Divider, HStack, Text, VStack, useDisclosure } from "@chakra-ui/react"
 import { Dispute } from "@/interfaces/Dispute.interface"
 import Button from "@/components/Button"
 import OpenDisputeForm from "./OpenDisputeForm"
@@ -29,7 +29,8 @@ export default function Disputes({ contractStatus, contractAddress }: Props) {
     },[])
     
     return (
-        <VStack w="100%" p={4}>
+        <VStack w="100%" align="center" pt={4}>
+            <Divider w="100%" style={{marginBottom: "7px"}}/>
             <OpenDisputeForm 
                 isOpen={isOpen} 
                 onClose={onClose} 

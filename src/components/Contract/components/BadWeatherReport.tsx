@@ -19,6 +19,7 @@ import {
     VStack,
     Divider,
     Input,
+    HStack,
 } from '@chakra-ui/react'
 import checkVesselUnderBadWeather from "@/utils/checkVesselUnderBadWeather";
 
@@ -68,7 +69,8 @@ export default function BadWeatherReport({ contractStatus, contractAddress }: Pr
     },[contractAddress])
     
     return (
-        <Box pt={4}>
+        <VStack w="100%" align="center">
+            <Divider w="100%" style={{marginBottom: "7px"}}/>
             <Modal isOpen={isOpen} onClose={onClose}>
                 <ModalOverlay />
                 <ModalContent fontFamily="EB Garamond">
@@ -158,6 +160,6 @@ export default function BadWeatherReport({ contractStatus, contractAddress }: Pr
                     <Text>Bad Weather Report</Text>
                 </Button>
             }
-        </Box>
+        </VStack>
     )
 }
