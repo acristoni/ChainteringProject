@@ -19,7 +19,7 @@ export default function ContractInfo({ contractAddress, contractStatus }: Props)
             <Text style={{margin: 0}} textAlign="center">{contractStatus.IMOnumber}</Text>
             <Text as='b' style={{margin: 0, marginTop: 4}}>Total amount due shipowner:</Text>
             <Text style={{margin: 0}} textAlign="center">{floatValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</Text>
-            <Text as='b' style={{margin: 0, marginTop: 4}}>total oil consumed during the term of the contract:</Text>
+            <Text as='b' style={{margin: 0, marginTop: 4}}>Total oil consumed during the term of the contract:</Text>
             <Text style={{margin: 0}} textAlign="center">{contractStatus.oilTotalConsuption} tons</Text>
         </>
     )

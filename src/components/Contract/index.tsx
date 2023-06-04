@@ -9,6 +9,7 @@ import StartManagement from "./components/StartManagement"
 import OpsReport from "./components/OpsReport"
 import BadWeatherReport from "./components/BadWeatherReport"
 import Disputes from "./components/Disputes"
+import FuelSupplyReport from "./components/FuelSupplyReport"
 
 interface Props {
     contractAddress: string
@@ -73,6 +74,7 @@ export default function Contract({ contractAddress }: Props) {
                     <TruflationInfo contractStatus={contractStatus} />
                     <MaticInfo contractStatus={contractStatus} />
                     <BadWeatherReport contractAddress={contractAddress} contractStatus={contractStatus} />
+                    <FuelSupplyReport contractAddress={contractAddress} contractStatus={contractStatus} />
                     <OpsReport contractAddress={contractAddress} contractStatus={contractStatus} />
                     <Disputes contractAddress={contractAddress} contractStatus={contractStatus} />
                     <StartManagement contractAddress={contractAddress} contractStatus={contractStatus} />            
