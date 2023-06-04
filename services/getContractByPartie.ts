@@ -1,6 +1,4 @@
 export default async function getContractByPartie(role: string, walletAddress: string) {
-    console.log("🚀 ~ file: getContractByPartie.ts:2 ~ getContractByPartie ~ walletAddress:", walletAddress)
-    console.log("🚀 ~ file: getContractByPartie.ts:2 ~ getContractByPartie ~ role:", role)
     try {
         const response = await fetch(`/api/contractparties/${role}?address=${walletAddress}`,{
             method: "GET",

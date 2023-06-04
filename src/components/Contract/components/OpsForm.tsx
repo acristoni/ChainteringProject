@@ -49,7 +49,10 @@ export default function OpsForm({ isOpen, onClose, contractAddress }: Props) {
         setLoadingMessage("We are request your distance, using Haversine formula on smart contract")
         setIsLoading(true)
         const responseDistance = await requestHaversineDistance(contractAddress, opsReportData)
-        if (responseDistance && responseDistance.hash && responseDistance.hash.length) {
+        if (responseDistance 
+            && responseDistance !== true
+            && responseDistance.hash 
+            && responseDistance.hash.length) {
             setIsDistanceCalculated(true)
         } else {
             setResponseMessage("There was an issue while attempting to process your request. Please try again later or contact us.")
@@ -61,7 +64,10 @@ export default function OpsForm({ isOpen, onClose, contractAddress }: Props) {
             setLoadingMessage("Now, We are updating your contract hourly pay rate, by crude oil price inflaction")
             const updateOilPrice = async() => {
                 const responseOil = await requestCrudeOilPrice(contractAddress)
-                if (responseOil && responseOil.hash && responseOil.hash.length) {
+                if (responseOil 
+                    && responseOil !== true
+                    && responseOil.hash 
+                    && responseOil.hash.length) {
                     setIsOilPriceUpdated(true)
                 } else {
                     setResponseMessage("There was an issue while attempting to process your request. Please try again later or contact us.")
@@ -76,7 +82,10 @@ export default function OpsForm({ isOpen, onClose, contractAddress }: Props) {
             setLoadingMessage("Last by not least, We are recording your operation report on your smart contract")
             const sendOpsReport = async() => {
                 const responseReport = await newOperationReport(contractAddress, opsReportData)
-                if (responseReport && responseReport.hash && responseReport.hash.length) {
+                if (responseReport 
+                    && responseReport !== true
+                    && responseReport.hash 
+                    && responseReport.hash.length) {
                     setResponseMessage("Congratulations, your operation report send is completed!")
                 } else {
                     setResponseMessage("There was an issue while attempting to process your request. Please try again later or contact us.")

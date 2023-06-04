@@ -47,7 +47,10 @@ export default function OpenDisputeForm({ isOpen, onClose, contractAddress, cont
         setLoadingMessage("We are opening your dispute on charter smart contract")
         const sendOpsReport = async() => {
             const responseReport = await openDispute(contractAddress, openDisputeData)
-            if (responseReport && responseReport.hash && responseReport.hash.length) {
+            if (responseReport 
+                && responseReport !== true
+                && responseReport.hash 
+                && responseReport.hash.length) {
                 setResponseMessage("Congratulations, you open a dispute!")
             } else {
                 setResponseMessage("There was an issue while attempting to process your request. Please try again later or contact us.")

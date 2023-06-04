@@ -13,7 +13,10 @@ export default function DepositLinkTruflation({ setStep }: { setStep: (value: nu
         const contractAbi = contractArtifact.abi
         if (truflationContractAddress) {
             const responseDeposit = await depositLinkToken(truflationContractAddress, contractAbi);
-            if (responseDeposit && responseDeposit.hash && responseDeposit.hash.length) {
+            if (responseDeposit 
+                && responseDeposit !== true
+                && responseDeposit.hash 
+                && responseDeposit.hash.length) {
                 setStep(7)
                 setisLoading(false)
             } else {

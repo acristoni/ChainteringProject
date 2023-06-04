@@ -13,7 +13,10 @@ export default function DepositLinkMatic({ setStep }: { setStep: (value: number)
         const contractAbi = contractArtifact.abi
         if (maticContractAddress) {
             const responseDeposit = await depositLinkToken(maticContractAddress, contractAbi);
-            if (responseDeposit && responseDeposit.hash && responseDeposit.hash.length) {
+            if (responseDeposit 
+                && responseDeposit !== true
+                && responseDeposit.hash 
+                && responseDeposit.hash.length) {
                 setStep(9)
                 setisLoading(false)
             } else {

@@ -18,8 +18,12 @@ export default function MaticInfo ({ contractStatus }: { contractStatus: Contrac
         if (contractStatus.maticContract) {
             const getMaticBalance = async() => {
                 const responseBalance = await getLinkTokenBalance(contractStatus.maticContract);
-                if (responseBalance && responseBalance.length) {
+                if (responseBalance 
+                    && responseBalance !== true
+                    && responseBalance.length) {
                     setMaticBalance(parseFloat(responseBalance))
+                } else {
+                    alert("We encountered an issue while try to do your request. Please try again later or contact us for assistance.")
                 }
                 setIsLoadingBalance(false)
             }
@@ -32,6 +36,8 @@ export default function MaticInfo ({ contractStatus }: { contractStatus: Contrac
         const responseDeposit = await depositLinkToken(contractStatus.maticContract, contractAbi)
         if (responseDeposit) {
             setUpdateBalance(!updateBalance)
+        } else {
+            alert("We encountered an issue while try to do your request. Please try again later or contact us for assistance.")
         }
     }
     

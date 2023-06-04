@@ -3,17 +3,23 @@ import { ethers } from 'ethers';
 export default async function connectToShipChartering(
   infoContractAddress: string, 
   charterContract: string,
-  contractABI: any[] ): Promise<ethers.providers.TransactionResponse> {
+  contractABI: any[] ): Promise<ethers.providers.TransactionResponse | boolean> {
 
   if (typeof window.ethereum !== 'undefined') {
-    await window.ethereum.enable();
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    
-    const signer = provider.getSigner();
-    const infoContract = new ethers.Contract(infoContractAddress, contractABI, signer);
-
-    return infoContract.connectToShipChartering(charterContract);
+    try {
+      await window.ethereum.enable();
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      
+      const signer = provider.getSigner();
+      const infoContract = new ethers.Contract(infoContractAddress, contractABI, signer);
+  
+      return infoContract.connectToShipChartering(charterContract);
+    } catch (error) {
+      console.error(error)
+      return false
+    }
   } else {
-    throw new Error('Metamask is not installed or not connected.');
+    console.error('Metamask is not installed or not connected.')
+    return false
   }
 }

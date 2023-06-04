@@ -18,8 +18,12 @@ export default function TruflationInfo ({ contractStatus }: { contractStatus: Co
         if (contractStatus.truflationContract) {
             const getTruflationBalance = async() => {
                 const responseBalance = await getLinkTokenBalance(contractStatus.truflationContract);
-                if (responseBalance && responseBalance.length) {
+                if (responseBalance 
+                    && responseBalance !== true
+                    && responseBalance.length) {
                     setTruflationBalance(parseFloat(responseBalance))
+                } else {
+                    alert("We encountered an issue while try to do your request. Please try again later or contact us for assistance.")
                 }
                 setIsLoadingBalance(false)
             }
@@ -32,6 +36,8 @@ export default function TruflationInfo ({ contractStatus }: { contractStatus: Co
         const responseDeposit = await depositLinkToken(contractStatus.truflationContract, contractAbi)
         if (responseDeposit) {
             setUpdateBalance(!updateBalance)
+        } else {
+            alert("We encountered an issue while try to do your request. Please try again later or contact us for assistance.")
         }
     }
         

@@ -38,7 +38,10 @@ export default function DisputeInfo({ disputeInfo, userRole, contractAddress }: 
     const handleVote = async(vote: boolean) => {
         setIsLoading(true)   
         const responseVote = await sendVote(contractAddress, disputeInfo.id, vote)
-        if (responseVote && responseVote.hash && responseVote.hash.length) {
+        if (responseVote 
+            && responseVote !== true
+            && responseVote.hash 
+            && responseVote.hash.length) {
             setResponseMessage("Your vote was send successfully")
         } else {
             setResponseMessage("There was an issue while attempting to process your request. Please try again later or contact us.")

@@ -2,7 +2,6 @@ import { ChangeEvent, useEffect, useState } from "react"
 import { useRouter } from 'next/router';
 import Button from "@/components/Button"
 import { ContractStatus } from "@/interfaces/ContractStatus.interface"
-import informBadWeather from "@/utils/contractInteractions/informBadWeather"
 import {
     Modal,
     ModalOverlay,
@@ -48,7 +47,10 @@ export default function FuelSupplyReport({ contractStatus, contractAddress }: Pr
             fuelSupplyData
         )
 
-        if (responseBadWeather && responseBadWeather.hash && responseBadWeather.hash.length) {
+        if (responseBadWeather 
+            && responseBadWeather !== true
+            && responseBadWeather.hash 
+            && responseBadWeather.hash.length) {
             setResponseMessage("You reported your vessel fuel supply successfully")
         } else {
             setResponseMessage("There was an issue while attempting to process your request. Please try again later or contact us.")

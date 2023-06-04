@@ -19,7 +19,9 @@ export default function Disputes({ contractStatus, contractAddress }: Props) {
     useEffect(()=>{
         const getAllContractDisputes = async() => {
             const responseDisputes = await getAllDisputes(contractAddress)
-            if (responseDisputes && responseDisputes.length) {
+            if (responseDisputes 
+                && responseDisputes !== true
+                && responseDisputes.length) {
                 setDisputes(responseDisputes)
             } else {
                 alert("There was an issue while attempting to get all disputes on your contract. Please try again later or contact us.")

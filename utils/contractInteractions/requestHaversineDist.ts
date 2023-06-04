@@ -4,28 +4,34 @@ import { OpsReport } from '@/interfaces/OpsReport.interface';
 
 export default async function requestHaversineDist(
   contractAddress: string, 
-  operationData: OpsReport ): Promise<ethers.providers.TransactionResponse> {
+  operationData: OpsReport ): Promise<ethers.providers.TransactionResponse | boolean> {
   const contractABI: any[] = contractArtifact.abi
 
   if (typeof window.ethereum !== 'undefined') {
-    await window.ethereum.enable();
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    
-    const signer = provider.getSigner();
-    const charterContract = new ethers.Contract(contractAddress, contractABI, signer);
-
-    const transaction = await charterContract.requestHaversineDistance(
-      String(operationData.latitudeDeparture),
-      String(operationData.longitudeDerparture),
-      String(operationData.latitudeArrival),
-      String(operationData.longitudeArrival)
-    );
-
-    const transactionReceipt = await transaction.wait();
-    console.log('tx dist: ', transactionReceipt);
-
-    return transaction;
+    try {
+      await window.ethereum.enable();
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      
+      const signer = provider.getSigner();
+      const charterContract = new ethers.Contract(contractAddress, contractABI, signer);
+  
+      const transaction = await charterContract.requestHaversineDistance(
+        String(operationData.latitudeDeparture),
+        String(operationData.longitudeDerparture),
+        String(operationData.latitudeArrival),
+        String(operationData.longitudeArrival)
+      );
+  
+      const transactionReceipt = await transaction.wait();
+      console.log('tx dist: ', transactionReceipt);
+  
+      return transaction;
+    } catch (error) {
+      console.error(error)
+      return false
+    }
   } else {
-    throw new Error('Metamask is not installed or not connected.');
+    console.error('Metamask is not installed or not connected.')
+    return false
   }
 }

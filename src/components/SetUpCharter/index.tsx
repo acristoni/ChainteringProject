@@ -22,7 +22,10 @@ export default function SetUpCharter({ setStep }: { setStep: (value: number) => 
         const charterContractAddress = sessionStorage.getItem("@NEWCHARTER")    
         if (charterContractAddress) {
             const responseSetUpContract = await setUpCharter(charterContractAddress, setUpCharterData);
-            if (responseSetUpContract && responseSetUpContract.hash && responseSetUpContract.hash.length) {
+            if (responseSetUpContract 
+                && responseSetUpContract !== true
+                && responseSetUpContract.hash 
+                && responseSetUpContract.hash.length) {
                 setisLoading(false) 
                 setStep(5)
             } else {

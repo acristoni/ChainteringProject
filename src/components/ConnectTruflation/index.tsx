@@ -14,7 +14,10 @@ export default function ConnectTruflation({ setStep }: { setStep: (value: number
         const contractAbi = contractArtifact.abi
         if (truflationContractAddress && charterContractAddress) {
             const responseConnect = await connectToShipChartering(truflationContractAddress, charterContractAddress, contractAbi);
-            if (responseConnect && responseConnect.hash && responseConnect.hash.length) {
+            if (responseConnect 
+                && responseConnect !== true
+                && responseConnect.hash 
+                && responseConnect.hash.length) {
                 setStep(6)
                 setisLoading(false)
             } else {

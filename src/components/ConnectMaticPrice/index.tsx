@@ -14,7 +14,10 @@ export default function ConnectMaticPrice({ setStep }: { setStep: (value: number
         const contractAbi = contractArtifact.abi
         if (maticContractAddress && charterContractAddress) {
             const responseConnect = await connectToShipChartering(maticContractAddress, charterContractAddress, contractAbi);
-            if (responseConnect && responseConnect.hash && responseConnect.hash.length) {
+            if (responseConnect 
+                && responseConnect !== true
+                && responseConnect.hash 
+                && responseConnect.hash.length) {
                 setStep(8)
                 setisLoading(false)
             } else {

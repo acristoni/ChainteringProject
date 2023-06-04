@@ -48,7 +48,10 @@ export default function BadWeatherReport({ contractStatus, contractAddress }: Pr
             String(position.longitude)
         )
 
-        if (responseBadWeather && responseBadWeather.hash && responseBadWeather.hash.length) {
+        if (responseBadWeather 
+            && responseBadWeather !== true
+            && responseBadWeather.hash 
+            && responseBadWeather.hash.length) {
             setResponseMessage("You reported your vessel under bad weather conditions successfully")
         } else {
             setResponseMessage("There was an issue while attempting to process your request. Please try again later or contact us.")

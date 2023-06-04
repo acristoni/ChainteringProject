@@ -10,7 +10,6 @@ import OpsReport from "./components/OpsReport"
 import BadWeatherReport from "./components/BadWeatherReport"
 import Disputes from "./components/Disputes"
 import FuelSupplyReport from "./components/FuelSupplyReport"
-import supplyReport from "@/utils/contractEvents/supplyReport"
 
 interface Props {
     contractAddress: string
@@ -31,25 +30,25 @@ export default function Contract({ contractAddress }: Props) {
 
     useEffect(()=>{
         if (contractAddress && typeof window !== 'undefined') {
-
-
-            supplyReport(contractAddress)
-
-
             const role = sessionStorage.getItem("@ROLE")
             if (role) {
                 const getContractStatus = async() => {
                     const responseStatus = await checkContractStatus(contractAddress)
-                    setContractStatus({
-                        isSetUp: responseStatus.isSetUp,
-                        isStarted: responseStatus.isStarted,
-                        IMOnumber: responseStatus.IMOnumber,
-                        roleUser: role,
-                        truflationContract: responseStatus.truflationContract,
-                        maticContract: responseStatus.maticContract,
-                        totalAmountDueToPay: responseStatus.totalAmountDueToPay,
-                        oilTotalConsuption: responseStatus.oilTotalConsuption
-                    })
+                    if (responseStatus &&
+                        responseStatus !== true) {
+                        setContractStatus({
+                            isSetUp: responseStatus.isSetUp,
+                            isStarted: responseStatus.isStarted,
+                            IMOnumber: responseStatus.IMOnumber,
+                            roleUser: role,
+                            truflationContract: responseStatus.truflationContract,
+                            maticContract: responseStatus.maticContract,
+                            totalAmountDueToPay: responseStatus.totalAmountDueToPay,
+                            oilTotalConsuption: responseStatus.oilTotalConsuption
+                        })
+                    } else {
+                        alert("There was an issue while attempting to process your request. Please try again later or contact us.")
+                    }
                     setIsLoading(false)
                 }
                 getContractStatus()

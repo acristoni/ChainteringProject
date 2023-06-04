@@ -31,7 +31,10 @@ export default function StartForm({ isOpen, onClose, contractAddress, setIsStart
         if (chartersTimeMonths) {
             setIsLoading(true)
             const responseStart = await startCharter(contractAddress, chartersTimeMonths)
-            if (responseStart && responseStart.hash && responseStart.hash.length) {
+            if (responseStart 
+                && responseStart !== true
+                && responseStart.hash 
+                && responseStart.hash.length) {
                 setIsStarted(true)
                 setResponseMessage("Congratulations, your contract for the charter period of the vessel has just started.")
             } else {
