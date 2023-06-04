@@ -23,7 +23,8 @@ export default function Contract({ contractAddress }: Props) {
         roleUser: '',
         truflationContract: '',
         maticContract: '',
-        totalAmountDueToPay: 0
+        totalAmountDueToPay: 0,
+        oilTotalConsuption: 0
     })
 
     useEffect(()=>{
@@ -39,7 +40,8 @@ export default function Contract({ contractAddress }: Props) {
                         roleUser: role,
                         truflationContract: responseStatus.truflationContract,
                         maticContract: responseStatus.maticContract,
-                        totalAmountDueToPay: responseStatus.totalAmountDueToPay
+                        totalAmountDueToPay: responseStatus.totalAmountDueToPay,
+                        oilTotalConsuption: responseStatus.oilTotalConsuption
                     })
                     setIsLoading(false)
                 }

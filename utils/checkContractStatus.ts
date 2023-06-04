@@ -1,12 +1,14 @@
 import { ethers } from 'ethers';
 import contractArtifact from '../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';  
 import { ResponseCheckStatus } from '@/interfaces/ResponseCheckStatus.interface';
+import convertHexToInt from './convertHexToInt';
 
 export default async function checkContractStatus (contractAddress: string): Promise<ResponseCheckStatus> {
   const contractABI: any[] = contractArtifact.abi;
-  let checkSetUp: { isSetUp: boolean, IMOnumber: number } = {
+  let checkSetUp: { isSetUp: boolean, IMOnumber: number, oilTotalConsuption: number } = {
     isSetUp: false,
-    IMOnumber: 0
+    IMOnumber: 0,
+    oilTotalConsuption: 0
   };
   let isStarted = false;
 
@@ -20,10 +22,12 @@ export default async function checkContractStatus (contractAddress: string): Pro
     const vesselData = await charterContract.vesselData();
     if (vesselData && vesselData.length) {
       const vesselIMOnumber = vesselData[0];
+      const oilTotalConsuption = convertHexToInt(vesselData.oilTotalConsuption._hex) 
       if (vesselIMOnumber) {
         checkSetUp = {
           isSetUp: true,
-          IMOnumber: vesselIMOnumber
+          IMOnumber: vesselIMOnumber,
+          oilTotalConsuption: oilTotalConsuption
         }
       } 
     } 
@@ -55,7 +59,8 @@ export default async function checkContractStatus (contractAddress: string): Pro
       isStarted: false,
       truflationContract: "",
       maticContract: "",
-      totalAmountDueToPay: 0
+      totalAmountDueToPay: 0,
+      oilTotalConsuption: 0
     }
   }
 }
