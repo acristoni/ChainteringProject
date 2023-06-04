@@ -1,10 +1,9 @@
 import { ethers } from 'ethers';
 import contractArtifact from '../../artifacts/contracts/ShipChartering.sol/ShipTimeCharteringGeneric.json';
 
-export default async function informBadWeather( 
+export default async function paymentContract(
   contractAddress: string, 
-  latitude: string, 
-  longitude: string ): Promise<ethers.providers.TransactionResponse | boolean> {
+  valueInMATIC: number ): Promise<ethers.providers.TransactionResponse | boolean> {
   const contractABI: any[] = contractArtifact.abi
 
   if (typeof window.ethereum !== 'undefined') {
@@ -15,10 +14,11 @@ export default async function informBadWeather(
       const signer = provider.getSigner();
       const charterContract = new ethers.Contract(contractAddress, contractABI, signer);
   
-      const transaction = await charterContract.informBadWeather(latitude, longitude);
+      const valueInWei = ethers.utils.parseUnits(valueInMATIC.toString(), 18)
+      const transaction = await charterContract.payAmountDue({ value: valueInWei });
   
       const transactionReceipt = await transaction.wait();
-      console.log('tx inform bad weather: ', transactionReceipt);
+      console.log('tx payment: ', transactionReceipt);
   
       return transaction;
     } catch (error) {

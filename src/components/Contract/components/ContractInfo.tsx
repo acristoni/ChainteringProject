@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { ContractStatus } from "@/interfaces/ContractStatus.interface";
-import { Text } from "@chakra-ui/react"
+import { HStack, Text } from "@chakra-ui/react"
+import ContractPayment from './ContractPayment';
 
 interface Props {
     contractAddress: string;
@@ -54,7 +55,13 @@ export default function ContractInfo({ contractAddress, contractStatus }: Props)
                 {contractStatus.IMOnumber}
             </Text>
             <Text as='b' style={{margin: 0, marginTop: 4}}>Total amount due shipowner:</Text>
-            <Text style={{margin: 0}} textAlign="center">{floatValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</Text>
+            <HStack>
+                <Text style={{margin: 0}} textAlign="center">{floatValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</Text>
+                {
+                    contractStatus.isStarted && contractStatus.roleUser === "CHARTERER" &&
+                    <ContractPayment contractAddress={contractAddress} />
+                }
+            </HStack>
             <Text as='b' style={{margin: 0, marginTop: 4}}>Total oil consumed during the term of the contract:</Text>
             <Text style={{margin: 0}} textAlign="center">{contractStatus.oilTotalConsuption} tons</Text>
         </>

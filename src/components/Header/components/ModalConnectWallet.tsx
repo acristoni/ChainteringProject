@@ -19,17 +19,17 @@ export default function ModalConnectWallet({ isOpen, onClose, ConnectWalletHandl
         <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={onClose}>
             <ModalOverlay />
             <ModalContent>
-            <ModalHeader>Logar na página</ModalHeader>
+            <ModalHeader>Log In</ModalHeader>
             <ModalCloseButton />
             <ModalBody pb={6}>
-                Você ainda não logou na página, gostaria de fazê-lo?
+                You haven&apos;t logged into the page yet, would you like to do so?
             </ModalBody>
 
             <ModalFooter>
                 <Button colorScheme='red' mr={3} onClick={ConnectWalletHandleButton}>
-                    Logar
+                    Log In
                 </Button>
-                <Button onClick={onClose}>Cancelar</Button>
+                <Button onClick={onClose}>Cancel</Button>
             </ModalFooter>
             </ModalContent>
         </Modal>

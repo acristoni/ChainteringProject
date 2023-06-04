@@ -73,7 +73,10 @@ export default function BadWeatherReport({ contractStatus, contractAddress }: Pr
     
     return (
         <VStack w="100%" align="center">
-            <Divider w="100%" style={{marginBottom: "7px"}}/>
+            {
+                contractStatus.isStarted && contractStatus.roleUser === "SHIPOWNER" &&
+                <Divider w="100%" style={{marginBottom: "7px"}}/>
+            }
             <Modal isOpen={isOpen} onClose={onClose}>
                 <ModalOverlay />
                 <ModalContent fontFamily="EB Garamond">

@@ -31,7 +31,7 @@ export default function Disputes({ contractStatus, contractAddress }: Props) {
     },[])
     
     return (
-        <VStack w="100%" align="center" pt={4}>
+        <VStack w="100%" align="center" pt={contractStatus.roleUser === "SHIPOWNER" ? 4 : 0}>
             <Divider w="100%" style={{marginBottom: "7px"}}/>
             <OpenDisputeForm 
                 isOpen={isOpen} 
