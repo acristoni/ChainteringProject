@@ -1,25 +1,9 @@
 import User from "../../../../models/User"
-import mongoose from "mongoose";
-const connection = {}
-// import dbConnection from "../../../../services/dbConnection"
+import dbConnection from "../../../../services/dbConnection"
 
+dbConnection();
 
-export default async function handler(req, res){
-    async function dbConnection() {
-        if (connection.isConnected) return
-    
-        mongoose.connect(process.env.MONGODB_URI, {
-            useNewUrlParser: true,
-        })
-        .then(() => {
-            console.log('Connection established with MongoDB');
-          })
-          .catch((error) => {
-            console.error('Error connecting to MongoDB:', error);
-          });
-    }
-    
-    dbConnection();
+export default async function handler(req, res){    
     const {method} = req
 
     switch(method){
