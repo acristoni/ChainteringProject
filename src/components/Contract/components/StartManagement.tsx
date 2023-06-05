@@ -1,15 +1,10 @@
 import { useEffect, useState } from "react";
 import Button from "@/components/Button";
-import { ContractStatus } from "@/interfaces/ContractStatus.interface";
+import { PropsContractChildren } from "@/interfaces/PropsContractChildren.interface";
 import { HStack, Text, useDisclosure } from "@chakra-ui/react";
 import StartForm from "./StartForm";
 
-interface Props {
-    contractAddress: string;
-    contractStatus: ContractStatus
-}
-
-export default function StartManagement({ contractAddress, contractStatus }: Props) {
+export default function StartManagement({ contractAddress, contractStatus }: PropsContractChildren) {
     const [isStarted, setIsStarted] = useState<boolean>(false)
     const { isOpen, onOpen, onClose } = useDisclosure()
 

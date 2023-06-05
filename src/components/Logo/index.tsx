@@ -11,7 +11,7 @@ export default function Logo({main}: {main?: boolean}) {
                 <Text
                     as='b'
                     color="blue.800"
-                    fontSize={main ? [80, 110, 120, 130, 150] : 40}
+                    fontSize={main ? [60, 80, 100, 120, 130] : 40}
                     style={{
                         margin: 0
                     }}

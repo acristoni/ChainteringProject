@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react"
-import { useRouter } from 'next/router'
+import { useState } from "react"
 import { 
     HStack, 
     IconButton, 
-    useDisclosure,
     useMediaQuery,
     VStack} from "@chakra-ui/react"
 import GroupButtonsHeader from "./components/GroupButtonsHeader"
@@ -11,13 +9,11 @@ import AvatarConnectWallet from "./components/AvatarConnectWallet"
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons'
 import Logo from "../Logo"
 import ButtonHeader from "./components/ButtonHeader"
+import handleDocumentationButton from "@/utils/userInteractions/handleDocumentationButton"
 
 export default function Header() {
-    const { isOpen, onOpen, onClose } = useDisclosure()
-    const [avatarName, setAvatarName] = useState('')
     const [showMenu, setShowMenu] = useState(false)
-    const router = useRouter()
-    const [isMobile] = useMediaQuery('(max-width: 900px)')
+    const [isMobile] = useMediaQuery('(max-width: 900px)')   
 
     return (
         <>
@@ -54,10 +50,7 @@ export default function Header() {
                             display={showMenu ? "flex" : "none"}
                         >
                             <GroupButtonsHeader />
-                            <AvatarConnectWallet 
-                                avatarName={avatarName} 
-                                onOpen={onOpen}                
-                            />
+                            <AvatarConnectWallet />
                         </VStack>
                     </VStack> :
                     <HStack
@@ -69,15 +62,12 @@ export default function Header() {
                             <Logo />
                         </HStack>
                         <HStack>
-                            {/* <ButtonHeader 
-                                title="Documentation" 
-                                // href="/documentation"
-                                onClick={()=>console.log("eita asuqeis")}
-                            /> */}
-                            <AvatarConnectWallet 
-                                avatarName={avatarName} 
-                                onOpen={onOpen}                
+                            <ButtonHeader 
+                                title="Documentation"
+                                onClick={handleDocumentationButton} 
+                                isLoading={false}                            
                             />
+                            <AvatarConnectWallet />
                         </HStack>
                     </HStack>
                 }

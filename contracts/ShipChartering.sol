@@ -268,7 +268,7 @@ contract ShipTimeCharteringGeneric is Initializable {
                 dateArrival,
                 "Ship owner inform bad weather, but oracle contest",
                 penalty,
-                DisputeParties.shipOwner
+                DisputeParties.charterer
             );
         }
 

@@ -1,14 +1,9 @@
 import Button from "@/components/Button"
-import { ContractStatus } from "@/interfaces/ContractStatus.interface"
+import { PropsContractChildren } from "@/interfaces/PropsContractChildren.interface"
 import { Box, Text, useDisclosure } from "@chakra-ui/react"
 import OpsForm from "./OpsForm"
 
-interface Props {
-    contractStatus: ContractStatus
-    contractAddress: string
-}
-
-export default function OpsReport({ contractStatus, contractAddress }: Props) {
+export default function OpsReport({ contractStatus, contractAddress }: PropsContractChildren) {
     const {isOpen, onOpen, onClose} = useDisclosure()
     
     return (

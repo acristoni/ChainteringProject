@@ -1,7 +1,7 @@
 import { ChangeEvent, useEffect, useState } from "react"
 import { useRouter } from 'next/router';
 import Button from "@/components/Button"
-import { ContractStatus } from "@/interfaces/ContractStatus.interface"
+import { PropsContractChildren } from "@/interfaces/PropsContractChildren.interface"
 import {
     Modal,
     ModalOverlay,
@@ -24,12 +24,7 @@ import { FuelSupplyData } from "@/interfaces/FuelSupplyData.interface";
 import fuelSupplyReport from "@/utils/contractInteractions/fuelSupplyReport";
 import convertToEvmTimestamp from "@/utils/convertFunctions/convertToEvmTimestamp";
 
-interface Props {
-    contractStatus: ContractStatus
-    contractAddress: string
-}
-
-export default function FuelSupplyReport({ contractStatus, contractAddress }: Props) {
+export default function FuelSupplyReport({ contractStatus, contractAddress }: PropsContractChildren) {
     const [fuelSupplyData, setFuelSupplyData] = useState<FuelSupplyData>({
         dateOfSupply: 0,
         quantity: 0

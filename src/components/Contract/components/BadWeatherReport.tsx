@@ -1,7 +1,7 @@
 import { ChangeEvent, useEffect, useState } from "react"
 import { useRouter } from 'next/router';
 import Button from "@/components/Button"
-import { ContractStatus } from "@/interfaces/ContractStatus.interface"
+import { PropsContractChildren } from "@/interfaces/PropsContractChildren.interface"
 import informBadWeather from "@/utils/contractInteractions/informBadWeather"
 import {
     Modal,
@@ -15,20 +15,13 @@ import {
     Button as ChakraButton,
     Text,
     useDisclosure,
-    Box,
     VStack,
     Divider,
     Input,
-    HStack,
 } from '@chakra-ui/react'
 import checkVesselUnderBadWeather from "@/utils/contractInteractions/checkVesselUnderBadWeather";
 
-interface Props {
-    contractStatus: ContractStatus
-    contractAddress: string
-}
-
-export default function BadWeatherReport({ contractStatus, contractAddress }: Props) {
+export default function BadWeatherReport({ contractStatus, contractAddress }: PropsContractChildren) {
     const [isUnderBadWeather, setIsUnderBadWeather] = useState<boolean>() 
     const [position, setPosition] = useState<{latitude: number, longitude: number}>({
         latitude: 0,

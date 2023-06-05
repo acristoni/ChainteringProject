@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 
 async function checkNetwork(): Promise<boolean> {
   if (typeof window.ethereum === 'undefined') {
+    alert("MetaMask is not installed or not available.")
     throw new Error('MetaMask is not installed or not available.');
   }
 

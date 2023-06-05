@@ -126,9 +126,12 @@ export default function DisputeInfo({ disputeInfo, userRole, contractAddress }: 
                     }
                 </ModalBody>
                 <ModalFooter>
-                    <ChakraButton variant='ghost' mr={3} onClick={onClose}>
-                        Close
-                    </ChakraButton>
+                    {
+                        !isLoading &&
+                        <ChakraButton variant='ghost' mr={3} onClick={onClose}>
+                            Close
+                        </ChakraButton>
+                    }
                 </ModalFooter>
                 </ModalContent>
             </Modal>

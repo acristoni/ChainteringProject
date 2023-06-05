@@ -1,14 +1,9 @@
 import BigNumber from 'bignumber.js';
-import { ContractStatus } from "@/interfaces/ContractStatus.interface";
 import { HStack, Text } from "@chakra-ui/react"
 import ContractPayment from './ContractPayment';
+import { PropsContractChildren } from '@/interfaces/PropsContractChildren.interface';
 
-interface Props {
-    contractAddress: string;
-    contractStatus: ContractStatus
-}
-
-export default function ContractInfo({ contractAddress, contractStatus }: Props) {
+export default function ContractInfo({ contractAddress, contractStatus }: PropsContractChildren) {
     const bigNumber = new BigNumber(contractStatus.totalAmountDueToPay);
     const floatValue = bigNumber.toNumber();
 

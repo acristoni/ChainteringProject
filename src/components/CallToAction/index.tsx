@@ -1,8 +1,15 @@
+import { useState } from "react";
 import { VStack, Text, Stack, HStack } from "@chakra-ui/react";
 import Card from "../Card";
 import { Files, Wallet } from "@phosphor-icons/react";
+import { useRouter } from "next/router";
+import handleConnectButton from "@/utils/userInteractions/handleConnectButton";
+import handleDocumentationButton from "@/utils/userInteractions/handleDocumentationButton";
 
 export default function CallToAction() {
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const router = useRouter()
+
     return (
         <HStack
             w="100%"
@@ -34,10 +41,13 @@ export default function CallToAction() {
                     <Card 
                         title="Documention" 
                         icon={<Files size={96} weight="thin" />}
+                        onClick={handleDocumentationButton}
                     />
                     <Card 
                         title="Connect" 
                         icon={<Wallet size={96} weight="thin" />}
+                        onClick={()=>handleConnectButton(setIsLoading, router)}
+                        isLoading={isLoading}
                     />
                 </Stack>
             </VStack>

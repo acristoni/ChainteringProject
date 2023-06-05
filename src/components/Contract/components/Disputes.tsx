@@ -1,4 +1,4 @@
-import { ContractStatus } from "@/interfaces/ContractStatus.interface"
+import { PropsContractChildren } from "@/interfaces/PropsContractChildren.interface"
 import getAllDisputes from "@/utils/contractInteractions/getAllDisputes"
 import { useEffect, useState } from "react"
 import { Divider, HStack, Text, VStack, useDisclosure } from "@chakra-ui/react"
@@ -7,12 +7,7 @@ import Button from "@/components/Button"
 import OpenDisputeForm from "./OpenDisputeForm"
 import DisputeInfo from "./DisputeInfo"
 
-interface Props {
-    contractStatus: ContractStatus
-    contractAddress: string
-}
-
-export default function Disputes({ contractStatus, contractAddress }: Props) {
+export default function Disputes({ contractStatus, contractAddress }: PropsContractChildren) {
     const {isOpen, onOpen, onClose} = useDisclosure()
     const [disputes, setDisputes] = useState<Dispute[]>([])
     
