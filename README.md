@@ -78,3 +78,6 @@ npx hardhat compile
 Please note that the above instructions assume you have Node.js and npm installed on your system. Adjust the commands accordingly if you are using a different package manager.
 
 Make sure to follow the steps carefully to set up the project locally and start the Next.js application. Enjoy exploring the Ship Chartering project!
+
+[LinkedIn](https://www.linkedin.com/in/adonai-cristoni-3a78a023a/)
+Connect with me on LinkedIn and let's stay in touch!
