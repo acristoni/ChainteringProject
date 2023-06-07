@@ -3,6 +3,8 @@
 
 Experience the future of vessel chartering with our dApp, leveraging the power of blockchain technology. Say goodbye to traditional contracts and embrace the transparency and security of smart contracts.
 
+[![Project Presentation](https://img.youtube.com/vi/SJy-NbGv1bg/0.jpg)](https://www.youtube.com/watch?v=SJy-NbGv1bg "Project Presentation")
+
 ## Accurate and transparent contract information
 
 Our dApp integrates with a reliable oracle to provide real-time data, including oil barrel prices and the Matic token exchange rate in USD. This ensures that the charterer's payments to the shipowner are adjusted accurately, guaranteeing transparency and fairness.
