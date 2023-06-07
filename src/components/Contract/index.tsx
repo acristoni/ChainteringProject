@@ -61,9 +61,8 @@ export default function Contract({ contractAddress }: Props) {
             p={4}
             m={4}
             w="100%"
-            border="1px dashed brown"
             rounded="md"
-            boxShadow="base"
+            boxShadow="xl"
         >
             {
                 isLoading ?

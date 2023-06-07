@@ -1,14 +1,17 @@
+import Button from "../Button";
 import Contract from "../Contract"
+import { Text, VStack } from "@chakra-ui/react"
 
 
 
 interface Props {
-    contractsAddresses: string[]
+    contractsAddresses: string[];
+    setIsDeploingNewContract: (value: boolean) => void
 }
 
-export default function AllContracts({ contractsAddresses }: Props) {
+export default function AllContracts({ contractsAddresses, setIsDeploingNewContract }: Props) {
     return (
-        <>
+        <VStack pb={6} w="100%">
             {
                 contractsAddresses.length &&
                 contractsAddresses.map(contractAddress => 
@@ -18,6 +21,9 @@ export default function AllContracts({ contractsAddresses }: Props) {
                     />    
                 )
             }
-        </>
+            <Button onClick={()=>setIsDeploingNewContract(true)}>
+                <Text>Deploy New Contract</Text>
+            </Button>
+        </VStack>
     )
 }

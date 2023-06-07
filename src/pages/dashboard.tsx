@@ -8,6 +8,7 @@ import AllContracts from "@/components/AllContracts";
 import { ContractParties as IContractParties } from "../../interfaces/ContractParties.interface"
 
 export default function Dashboard() {
+  const [isDeploingNewContract, setIsDeploingNewContract] = useState<boolean>(false)
   const [contractsAddresses, setContractAddresses] = useState<string[]>([])
   const [mainText, setMainText] = useState<string>("")
   const [userRole, setUserRole] = useState<string>("")
@@ -18,6 +19,14 @@ export default function Dashboard() {
       if (role) setUserRole(role)
     }
   },[])
+
+  useEffect(()=>{
+    if (contractsAddresses.length) {
+      setIsDeploingNewContract(false)
+    } else {
+      setIsDeploingNewContract(true)
+    }
+  },[contractsAddresses])
 
   useEffect(()=>{
     const wallet = sessionStorage.getItem("@WALLET")
@@ -71,10 +80,13 @@ export default function Dashboard() {
         maxW="800px"
         align="center"
       >
-        <MainTextDashboard mainText={mainText}/>
         {
-          contractsAddresses && contractsAddresses.length ?
-          <AllContracts contractsAddresses={contractsAddresses}/> :
+          !(isDeploingNewContract && contractsAddresses.length) &&
+          <MainTextDashboard mainText={mainText}/>
+        }
+        {
+          !isDeploingNewContract ?
+          <AllContracts contractsAddresses={contractsAddresses} setIsDeploingNewContract={setIsDeploingNewContract}/> :
           <DeployNewContract />          
         }
       </VStack>

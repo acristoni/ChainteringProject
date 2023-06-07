@@ -11,6 +11,7 @@ export default function MainBanner() {
             justify={['center', 'center', 'center', 'center', 'space-between']}
             align="center"
             p={[10, 7, 7, 7, '5vw']}
+            mt="5vh"
             shadow="2xl"
         >
             <Logo main/>
