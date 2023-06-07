@@ -79,5 +79,5 @@ Please note that the above instructions assume you have Node.js and npm installe
 
 Make sure to follow the steps carefully to set up the project locally and start the Next.js application. Enjoy exploring the Ship Chartering project!
 
-[LinkedIn](https://www.linkedin.com/in/adonai-cristoni-3a78a023a/)
+[LinkedIn](https://www.linkedin.com/in/adonai-cristoni-3a78a023a/?locale=en_US)
 Connect with me on LinkedIn and let's stay in touch!
